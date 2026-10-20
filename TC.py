@@ -1,5 +1,6 @@
 ﻿# -*- coding: utf-8 -*-
 import os
+from datetime import datetime
 from nicegui import ui, app
 import json
 
@@ -62,7 +63,7 @@ with ui.row().classes('w-full p-6 gap-6'):
                 cust_loc = ui.input('Customer Site / Location *', value='').classes('w-full')
                 sr_num = ui.input('Upgrade SR *', value='').classes('w-full')
                 serial_num = ui.input('Serial Number *', value='').classes('w-full')
-                sys_model = ui.select(['NA', 'Model 4x', 'Model 5x', 'Model 8x'], label='System Model *', value='NA').classes('w-full')
+                sys_model = ui.select(['NA', 'Model 4x', 'Model 5x', 'Model 8x'], label='IDPA Model *', value='NA').classes('w-full')
                 curr_code = ui.select(['NA', '2.6.0', '2.7.2', '2.7.7', '2.7.9'], label='Current Code *', value='NA').classes('w-full')
                 req_code = ui.select(['NA', '2.6.0', '2.7.2', '2.7.7', '2.7.9'], label='Code Requested *', value='NA').classes('w-full')
                 rec_code = ui.select(['NA', '2.6.0', '2.7.2', '2.7.7', '2.7.9'], label='Code Recommended *', value='NA').classes('w-full')
@@ -74,14 +75,11 @@ with ui.row().classes('w-full p-6 gap-6'):
         with ui.card().classes('w-full p-5 border-l-4 border-teal-600 shadow-sm'):
             ui.label('2. System Health Checks').classes('text-md font-bold text-teal-900 mb-2')
             with ui.grid(columns=2).classes('w-full gap-3'):
-                
-                # ACM Dashboard Select + Conditional Details Input
                 with ui.column().classes('w-full gap-1'):
                     acm_dashboard = ui.select(['NA', 'Good', 'Issues found - remediated', 'Issues found - outstanding'], label='ACM Dashboard Status *', value='NA').classes('w-full')
                     acm_details = ui.input('ACM Issue Details', value='').classes('w-full text-xs')
                     acm_details.bind_visibility_from(acm_dashboard, 'value', backward=lambda v: 'Issues' in str(v))
 
-                # RUCK Select + Conditional Details Input
                 with ui.column().classes('w-full gap-1'):
                     ruck_status = ui.select(['NA', 'Good', 'Issues remediated', 'Issues pending'], label='RUCK Status *', value='NA').classes('w-full')
                     ruck_details = ui.input('RUCK Issue Details', value='').classes('w-full text-xs')
@@ -147,7 +145,7 @@ with ui.row().classes('w-full p-6 gap-6'):
             
             activity_container = ui.column().classes('w-full gap-3')
 
-            def add_activity_card(rcm='TBD', name='NA', from_v='NA', to_v='NA', date_val='', time_val='10:00', ndmp=False, ddos=False, hf=False, ave=False):
+            def add_activity_card(rcm='TBD', name='IDPA OE Code Upgrade', from_v='NA', to_v='NA', date_val='', time_val='10:00', schedule_status='To be Scheduled', ndmp_count='No', ndmp_details='', add_acts=['No Additional Activities'], add_act_details='', duration_val=None, multi_step=False):
                 with activity_container:
                     card = ui.card().classes('w-full p-3 bg-gray-50 border border-gray-200')
                     with card:
@@ -156,44 +154,65 @@ with ui.row().classes('w-full p-6 gap-6'):
                             ui.button(icon='delete', color='negative', on_click=lambda: remove_activity_card(card_data)).props('flat round dense')
                         
                         with ui.grid(columns=3).classes('w-full gap-2 items-center'):
-                            inp_rcm = ui.input('RCM ID', value=rcm).classes('w-full text-xs')
+                            inp_rcm = ui.input('RCM Activity ID', value=rcm).classes('w-full text-xs')
                             
                             inp_name = ui.select([
                                 'NA',
-                                'IDPA OE Code Upgrade + NDMP Upgrade',
-                                'IDPA OE Standalone Upgrade',
-                                'NDMP Patch Upgrade',
-                                'DDOS Code Upgrade',
-                                'Hotfix / Security Patch Installation',
-                                'AVE /space Expansion'
-                            ], label='Activity Name *', value=name).classes('w-full text-xs')
-                            
-                            inp_from = ui.select(['NA', '2.6.0', '2.7.2', '2.7.7', '2.7.9'], label='From Version', value=from_v).classes('w-full text-xs')
-                            inp_to = ui.select(['NA', '2.6.0', '2.7.2', '2.7.7', '2.7.9'], label='To Version', value=to_v).classes('w-full text-xs')
+                                'IDPA OE Code Upgrade',
+                                'DDOS Upgrade',
+                                'Hotfix Upgrade',
+                                'Other'
+                            ], label='Base Activity *', value=name).classes('w-full text-xs')
 
-                            # Date Picker Input
+                            inp_sched_status = ui.select(['To be Scheduled', 'Scheduled'], label='Schedule Status *', value=schedule_status).classes('w-full text-xs')
+                            
+                            inp_from = ui.select(['NA', '2.6.0', '2.7.2', '2.7.7', '2.7.9'], label='Upgrading From', value=from_v).classes('w-full text-xs')
+                            inp_to = ui.select(['NA', '2.6.0', '2.7.2', '2.7.7', '2.7.9'], label='Upgrading To', value=to_v).classes('w-full text-xs')
+
+                            # Manual override or calculated duration display
+                            duration_options = [round(x * 0.5, 1) for x in range(1, 25)]
+                            inp_duration = ui.select(duration_options, label='Duration (Hours - Override)', value=duration_val).classes('w-full text-xs')
+
                             with ui.input('Scheduled Date', value=date_val).classes('w-full text-xs') as inp_date:
                                 with inp_date.add_slot('append'):
                                     ui.icon('event').classes('cursor-pointer').on('click', lambda: date_menu.open())
                                 with ui.menu() as date_menu:
                                     ui.date().bind_value(inp_date)
 
-                            # Time Picker Input (24-Hour)
                             time_options = [f"{h:02d}:{m:02d}" for h in range(24) for m in (0, 30)]
                             inp_time = ui.select(time_options, label='Time (24h)', value=time_val).classes('w-full text-xs')
 
+                        with ui.row().classes('w-full gap-2 mt-2 items-center'):
+                            inp_ndmp_count = ui.select(['No', 'Yes—1', 'Yes—2', 'Yes—3', 'Yes—4', 'Yes—Other'], label='NDMP Upgrade / Count', value=ndmp_count).classes('w-1/2 text-xs')
+                            inp_ndmp_details = ui.input('NDMP Count Details', value=ndmp_details).classes('w-1/2 text-xs')
+                            inp_ndmp_details.bind_visibility_from(inp_ndmp_count, 'value', backward=lambda v: v == 'Yes—Other')
+
+                        with ui.row().classes('w-full gap-2 mt-2 items-center'):
+                            inp_add_acts = ui.select([
+                                'No Additional Activities', 
+                                'AVE /space expansion', 
+                                'NDMP Upgrade', 
+                                'DDOS Upgrade', 
+                                'Hotfix Upgrade',
+                                'Other'
+                            ], multiple=True, label='Additional Activities', value=add_acts).classes('w-1/2 text-xs')
+                            
+                            inp_add_act_details = ui.input('Additional Activity Details', value=add_act_details).classes('w-1/2 text-xs')
+                            inp_add_act_details.bind_visibility_from(inp_add_acts, 'value', backward=lambda v: isinstance(v, list) and 'Other' in v)
+
                         with ui.row().classes('w-full gap-4 mt-2'):
-                            chk_ndmp = ui.checkbox('NDMP', value=ndmp)
-                            chk_ddos = ui.checkbox('DDOS Upgrade', value=ddos)
-                            chk_hf = ui.checkbox('Hotfix', value=hf)
-                            chk_ave = ui.checkbox('AVE /space', value=ave)
+                            chk_multistep = ui.checkbox('Multi-Step OE Upgrade', value=multi_step)
 
                         card_data = {
                             'card_widget': card,
                             'rcm': inp_rcm, 'name': inp_name,
+                            'schedule_status': inp_sched_status,
                             'date': inp_date, 'time': inp_time,
                             'from': inp_from, 'to': inp_to,
-                            'ndmp': chk_ndmp, 'ddos': chk_ddos, 'hf': chk_hf, 'ave': chk_ave
+                            'duration': inp_duration,
+                            'ndmp_count': inp_ndmp_count, 'ndmp_details': inp_ndmp_details,
+                            'add_acts': inp_add_acts, 'add_act_details': inp_add_act_details,
+                            'multi_step': chk_multistep
                         }
                         activity_rows.append(card_data)
 
@@ -241,72 +260,161 @@ with ui.row().classes('w-full p-6 gap-6'):
 add_activity_card()
 
 
+# --- DURATION CALCULATION LOGIC ---
+def calculate_activity_duration(model_str, base_name, ndmp_cnt, add_acts, manual_duration):
+    if manual_duration is not None:
+        duration_hrs = float(manual_duration)
+    else:
+        duration_hrs = 0.0
+        # 1. Base Model OE Duration
+        if base_name in ['IDPA OE Code Upgrade', 'NA']:
+            duration_hrs += MODEL_BASE_DURATIONS.get(model_str, 9.0)
+        elif base_name == 'DDOS Upgrade':
+            duration_hrs += 3.0
+        elif base_name == 'Hotfix Upgrade':
+            duration_hrs += 1.0
+
+        # 2. NDMP Duration (0.5h per count)
+        ndmp_multiplier_map = {'Yes—1': 1, 'Yes—2': 2, 'Yes—3': 3, 'Yes—4': 4}
+        if ndmp_cnt in ndmp_multiplier_map:
+            duration_hrs += ndmp_multiplier_map[ndmp_cnt] * 0.5
+        elif ndmp_cnt == 'Yes—Other':
+            duration_hrs += 0.5
+
+        # 3. Additional Component Durations
+        if 'DDOS Upgrade' in add_acts and base_name != 'DDOS Upgrade':
+            duration_hrs += 3.0
+        if 'Hotfix Upgrade' in add_acts and base_name != 'Hotfix Upgrade':
+            duration_hrs += 1.0
+        if 'AVE /space expansion' in add_acts:
+            duration_hrs += 1.0
+
+    # Rule: Internal planned duration = customer duration + 1-hour internal buffer
+    internal_planned_duration = duration_hrs + 1.0
+    return duration_hrs, internal_planned_duration
+
+
+def compute_combined_activity_name(base_name, ndmp_cnt, add_acts):
+    if base_name in ['NA', 'DDOS Upgrade', 'Hotfix Upgrade', 'Other']:
+        return base_name if base_name != 'Other' else 'IDPA OE Code Upgrade'
+    
+    has_ave = 'AVE /space expansion' in add_acts
+    has_ndmp = ndmp_cnt != 'No' or 'NDMP Upgrade' in add_acts
+    has_ddos = 'DDOS Upgrade' in add_acts
+    has_hf = 'Hotfix Upgrade' in add_acts
+
+    parts = []
+    if has_ave:
+        parts.append("AVE /space")
+    parts.append("IDPA OE Code Upgrade")
+
+    suffixes = []
+    if has_ndmp:
+        suffixes.append("NDMP Upgrade")
+    if has_ddos:
+        suffixes.append("DDOS Upgrade")
+    if has_hf:
+        suffixes.append("Hotfix Upgrade")
+
+    combined = " + ".join(parts)
+    if suffixes:
+        combined += " + " + " + ".join(suffixes)
+    return combined
+
+
 # --- PROCESSING & FILE DOWNLOAD LOGIC ---
 def process_tc_generation():
     path_key = f"{curr_code.value}-{conf_code.value}"
     target_steps = UPGRADE_PATHS.get(path_key, [conf_code.value] if conf_code.value != 'NA' else [])
     upgrade_path_str = " → ".join([curr_code.value] + target_steps) if curr_code.value != 'NA' else 'NA'
 
-    base_oe_hours = MODEL_BASE_DURATIONS.get(sys_model.value, 9.0)
-
     required_packages = []
     internal_act_lines = []
     customer_act_sections = []
 
+    last_scheduled_dt = None
+
     for idx, row in enumerate(activity_rows, 1):
         act_from = row['from'].value
         act_to = row['to'].value
-        act_rcm = row['rcm'].value if row['rcm'].value else "TBD"
+        sched_status = row['schedule_status'].value
         
         date_part = row['date'].value if row['date'].value else ""
         time_part = row['time'].value if row['time'].value else ""
-        act_date = f"{date_part} {time_part}".strip() if (date_part or time_part) else "TBD"
         
-        act_name = row['name'].value
+        if sched_status == 'Scheduled' and date_part and time_part:
+            act_rcm = row['rcm'].value if row['rcm'].value else "TBD"
+            act_date = f"{date_part} {time_part}".strip()
+            
+            try:
+                current_dt = datetime.strptime(f"{date_part} {time_part}", "%Y/%m/%d %H:%M")
+            except ValueError:
+                try:
+                    current_dt = datetime.strptime(f"{date_part} {time_part}", "%Y-%m-%d %H:%M")
+                except ValueError:
+                    current_dt = None
 
-        has_ndmp = row['ndmp'].value
-        has_ddos = row['ddos'].value
-        has_hf = row['hf'].value
-        has_ave = row['ave'].value
+            if current_dt and last_scheduled_dt:
+                time_diff = (current_dt - last_scheduled_dt).total_seconds() / 3600.0
+                if time_diff < 24.0:
+                    ui.notify(
+                        f"Warning (Step {idx}): Scheduled time must be at least 24 hours after the previous step!",
+                        type='warning',
+                        duration=6000
+                    )
+            if current_dt:
+                last_scheduled_dt = current_dt
+        else:
+            act_rcm = "TBD"
+            act_date = "TBD"
 
-        ndmp_hrs = 0.5 if has_ndmp else 0.0
-        ddos_hrs = 3.0 if has_ddos else 0.0
-        hf_hrs = 1.0 if has_hf else 0.0
-        ave_hrs = 1.0 if has_ave else 0.0
+        base_name = row['name'].value
+        ndmp_cnt = row['ndmp_count'].value
+        add_acts_list = row['add_acts'].value if isinstance(row['add_acts'].value, list) else []
+        manual_duration = row['duration'].value
+        multi_step_flag = row['multi_step'].value
+
+        act_name = compute_combined_activity_name(base_name, ndmp_cnt, add_acts_list)
         
-        internal_planned_duration = base_oe_hours + ndmp_hrs + ddos_hrs + hf_hrs + ave_hrs + 1.0
-
-        internal_act_lines.append(
-            f"{act_rcm} | {act_name} | {act_from} → {act_to} | {act_date} | Planned Duration: {internal_planned_duration} Hours (Internal)"
+        # Calculate duration according to Section 11 Specification Rules
+        cust_duration, internal_planned_duration = calculate_activity_duration(
+            sys_model.value, base_name, ndmp_cnt, add_acts_list, manual_duration
         )
 
-        # Formatted Section Heading for Email Upgrade Steps
+        internal_act_lines.append(
+            f"{act_rcm} | {act_name} | {act_from} → {act_to} | {act_date} | Duration: {cust_duration}h | Planned Duration: {internal_planned_duration}h (Internal Buffer +1h) | Status: {sched_status} | Multi-Step: {multi_step_flag}"
+        )
+
         customer_act_sections.append(
             f"Step {idx}: {act_name}\n"
-            f"  • RCM ID          : {act_rcm}\n"
+            f"  • RCM Activity ID   : {act_rcm}\n"
+            f"  • Schedule Status   : {sched_status}\n"
             f"  • Version Transition: {act_from} → {act_to}\n"
-            f"  • Scheduled Date  : {act_date}"
+            f"  • Scheduled Date    : {act_date}\n"
+            f"  • Duration          : {cust_duration} Hours\n"
+            f"  • NDMP Count        : {ndmp_cnt}\n"
+            f"  • Additional Acts   : {', '.join(add_acts_list)}"
         )
 
         if act_to != 'NA':
             oe_pkg = next((p for p in PACKAGE_DATABASE if p["type"] == "IDPA OE" and p["version"] == act_to), None)
             if oe_pkg: required_packages.append(oe_pkg)
 
-            if has_ndmp:
+            if ndmp_cnt != 'No':
                 ndmp_pkg = next((p for p in PACKAGE_DATABASE if p["type"] == "NDMP" and p["applicableFor"] == f"NDMP for {act_to}"), None)
                 if ndmp_pkg: required_packages.append(ndmp_pkg)
 
-            if has_hf:
-                hf_pkg = next((p for p in PACKAGE_DATABASE if p["type"] == "Hotfix" and p["applicableFor"] == act_to), None)
-                if hf_pkg: required_packages.append(hf_pkg)
-
-            if has_ave and act_to == "2.7.2":
+            if 'AVE /space expansion' in add_acts_list and act_to == "2.7.2":
                 ave_pkg = next((p for p in PACKAGE_DATABASE if p["type"] == "AVE /space"), None)
                 if ave_pkg: required_packages.append(ave_pkg)
 
-            if has_ddos:
+            if 'DDOS Upgrade' in add_acts_list:
                 ddos_pkg = next((p for p in PACKAGE_DATABASE if p["type"] == "DDOS"), None)
                 if ddos_pkg: required_packages.append(ddos_pkg)
+
+            if 'Hotfix Upgrade' in add_acts_list:
+                hf_pkg = next((p for p in PACKAGE_DATABASE if p["type"] == "Hotfix" and p["applicableFor"] == act_to), None)
+                if hf_pkg: required_packages.append(hf_pkg)
 
     seen_ids = set()
     unique_packages = []
@@ -315,7 +423,6 @@ def process_tc_generation():
             seen_ids.add(pkg["id"])
             unique_packages.append(pkg)
 
-    # Format Health Details for internal summary if present
     acm_val_str = f"{acm_dashboard.value}" + (f" (Details: {acm_details.value})" if acm_details.value and 'Issues' in acm_dashboard.value else "")
     ruck_val_str = f"{ruck_status.value}" + (f" (Details: {ruck_details.value})" if ruck_details.value and 'Issues' in ruck_status.value else "")
 
@@ -326,7 +433,7 @@ Customer Name: {cust_name.value}
 Customer Site / Location: {cust_loc.value}
 Upgrade SR: {sr_num.value}
 PowerProtect DP Serial Number: {serial_num.value}
-System Model: {sys_model.value}
+IDPA Model: {sys_model.value}
 Current Code: {curr_code.value}
 Code Requested: {req_code.value}
 Code Recommended: {rec_code.value}
@@ -357,7 +464,6 @@ RCM SCHEDULE & ACTIVITIES:
 5. SCHEDULING ACTION
 Action Taken: {scheduling_action.value}"""
 
-    # Formatted Tabular Column for Upgrade Packages
     if unique_packages:
         col_type = max(len(p['type']) for p in unique_packages)
         col_type = max(col_type, 12)
@@ -414,7 +520,7 @@ Customer Name              : {cust_name.value}
 Customer Site / Location   : {cust_loc.value}
 Upgrade SR                 : {sr_num.value}
 PowerProtect DP Serial No. : {serial_num.value}
-System Model               : {sys_model.value}
+IDPA Model                 : {sys_model.value}
 Current Code               : {curr_code.value}
 Code Confirmed             : {conf_code.value}
 
