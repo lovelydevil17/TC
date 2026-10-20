@@ -74,19 +74,32 @@ with ui.row().classes('w-full p-6 gap-6'):
         with ui.card().classes('w-full p-5 border-l-4 border-teal-600 shadow-sm'):
             ui.label('2. System Health Checks').classes('text-md font-bold text-teal-900 mb-2')
             with ui.grid(columns=2).classes('w-full gap-3'):
-                acm_dashboard = ui.select(['NA', 'Good', 'Issues found - remediated', 'Issues found - outstanding'], label='ACM Dashboard Status *', value='NA').classes('w-full')
+                
+                # ACM Dashboard Select + Conditional Details Input
+                with ui.column().classes('w-full gap-1'):
+                    acm_dashboard = ui.select(['NA', 'Good', 'Issues found - remediated', 'Issues found - outstanding'], label='ACM Dashboard Status *', value='NA').classes('w-full')
+                    acm_details = ui.input('ACM Issue Details', value='').classes('w-full text-xs')
+                    acm_details.bind_visibility_from(acm_dashboard, 'value', backward=lambda v: 'Issues' in str(v))
+
+                # RUCK Select + Conditional Details Input
+                with ui.column().classes('w-full gap-1'):
+                    ruck_status = ui.select(['NA', 'Good', 'Issues remediated', 'Issues pending'], label='RUCK Status *', value='NA').classes('w-full')
+                    ruck_details = ui.input('RUCK Issue Details', value='').classes('w-full text-xs')
+                    ruck_details.bind_visibility_from(ruck_status, 'value', backward=lambda v: 'Issues' in str(v))
+
                 pdf_status = ui.select([
                     'NA',
                     'Good — downloaded and attached to SR (Prefixed with Tech Consult)',
                     'Issue — PDF download fails; all other health checks pass; retest post-upgrade and raise support ticket if needed'
                 ], label='PDF Status *', value='NA').classes('w-full')
-                ruck_status = ui.select(['NA', 'Good', 'Issues remediated', 'Issues pending'], label='RUCK Status *', value='NA').classes('w-full')
+                
                 acm_snapshot = ui.select([
                     'NA',
                     'No VM Snapshot discovered',
                     'VM Snapshot discovered — customer confirmed removal before upgrade using KB 000218806',
                     'Removal pending'
                 ], label='ACM VM Snapshot *', value='NA').classes('w-full')
+                
                 validation_status = ui.select([
                     'NA',
                     'Code Downloaded and Validation Passed',
@@ -94,6 +107,7 @@ with ui.row().classes('w-full p-6 gap-6'):
                     'Downloaded and validation failed',
                     'Code not downloaded'
                 ], label='Validation Status *', value='NA').classes('w-full')
+                
                 idrac_status = ui.select(['NA', 'Configured and Accessible', 'Configured but Not Accessible', 'Not Configured'], label='iDRAC Status *', value='NA').classes('w-full')
                 exceptional_tasks = ui.select(['NA', 'No Action Required', 'Review RCM Activity Notes', 'Action Required'], label='Exceptional Tasks *', value='NA').classes('w-full')
                 health_status = ui.select([
@@ -157,14 +171,14 @@ with ui.row().classes('w-full p-6 gap-6'):
                             inp_from = ui.select(['NA', '2.6.0', '2.7.2', '2.7.7', '2.7.9'], label='From Version', value=from_v).classes('w-full text-xs')
                             inp_to = ui.select(['NA', '2.6.0', '2.7.2', '2.7.7', '2.7.9'], label='To Version', value=to_v).classes('w-full text-xs')
 
-                            # Date Picker Input (Calendar Popup)
+                            # Date Picker Input
                             with ui.input('Scheduled Date', value=date_val).classes('w-full text-xs') as inp_date:
                                 with inp_date.add_slot('append'):
                                     ui.icon('event').classes('cursor-pointer').on('click', lambda: date_menu.open())
                                 with ui.menu() as date_menu:
                                     ui.date().bind_value(inp_date)
 
-                            # Time Picker Input (24-Hour Dropdown Select)
+                            # Time Picker Input (24-Hour)
                             time_options = [f"{h:02d}:{m:02d}" for h in range(24) for m in (0, 30)]
                             inp_time = ui.select(time_options, label='Time (24h)', value=time_val).classes('w-full text-xs')
 
@@ -223,7 +237,7 @@ with ui.row().classes('w-full p-6 gap-6'):
                 ui.button('💾 Download Email (.txt)', on_click=lambda: download_file(email_body_output.value, f"{sr_num.value or 'TC'}_Customer_Email.txt")).classes('bg-sky-900 text-white')
 
 
-# Add 1 initial empty activity step card by default
+# Add 1 initial activity step card by default
 add_activity_card()
 
 
@@ -237,14 +251,13 @@ def process_tc_generation():
 
     required_packages = []
     internal_act_lines = []
-    customer_act_lines = []
+    customer_act_sections = []
 
-    for row in activity_rows:
+    for idx, row in enumerate(activity_rows, 1):
         act_from = row['from'].value
         act_to = row['to'].value
         act_rcm = row['rcm'].value if row['rcm'].value else "TBD"
         
-        # Combine Date and 24h Time into single string
         date_part = row['date'].value if row['date'].value else ""
         time_part = row['time'].value if row['time'].value else ""
         act_date = f"{date_part} {time_part}".strip() if (date_part or time_part) else "TBD"
@@ -266,8 +279,13 @@ def process_tc_generation():
         internal_act_lines.append(
             f"{act_rcm} | {act_name} | {act_from} → {act_to} | {act_date} | Planned Duration: {internal_planned_duration} Hours (Internal)"
         )
-        customer_act_lines.append(
-            f"{act_rcm} | {act_name} | {act_from} → {act_to} | {act_date}"
+
+        # Formatted Section Heading for Email Upgrade Steps
+        customer_act_sections.append(
+            f"Step {idx}: {act_name}\n"
+            f"  • RCM ID          : {act_rcm}\n"
+            f"  • Version Transition: {act_from} → {act_to}\n"
+            f"  • Scheduled Date  : {act_date}"
         )
 
         if act_to != 'NA':
@@ -297,6 +315,10 @@ def process_tc_generation():
             seen_ids.add(pkg["id"])
             unique_packages.append(pkg)
 
+    # Format Health Details for internal summary if present
+    acm_val_str = f"{acm_dashboard.value}" + (f" (Details: {acm_details.value})" if acm_details.value and 'Issues' in acm_dashboard.value else "")
+    ruck_val_str = f"{ruck_status.value}" + (f" (Details: {ruck_details.value})" if ruck_details.value and 'Issues' in ruck_status.value else "")
+
     sr_template = f"""*** POWERPROTECT DP TECHNICAL CONSULTATION (TC) SUMMARY ***
 
 1. CUSTOMER & SYSTEM DETAILS
@@ -312,9 +334,9 @@ Code Confirmed: {conf_code.value}
 Upgrade Request Notes: {upg_notes.value}
 
 2. SYSTEM HEALTH & PREPARATION
-ACM Dashboard Status: {acm_dashboard.value}
+ACM Dashboard Status: {acm_val_str}
 PDF Status: {pdf_status.value}
-RUCK Status: {ruck_status.value}
+RUCK Status: {ruck_val_str}
 ACM VM Snapshot: {acm_snapshot.value}
 Validation Status: {validation_status.value}
 iDRAC Status: {idrac_status.value}
@@ -335,12 +357,32 @@ RCM SCHEDULE & ACTIVITIES:
 5. SCHEDULING ACTION
 Action Taken: {scheduling_action.value}"""
 
-    customer_pkg_rows = [
-        f"{p['type']} | {p['version']} | {p['filename']} | {p['size']} | {p['sha256']} | {p['version']} ({p['download']})"
-        for p in unique_packages
-    ]
-    
-    docs_formatted = "\n".join([f"{d['name']} ({d['url']})" for d in REF_DOCUMENTS])
+    # Formatted Tabular Column for Upgrade Packages
+    if unique_packages:
+        col_type = max(len(p['type']) for p in unique_packages)
+        col_type = max(col_type, 12)
+        col_ver = max(len(p['version']) for p in unique_packages)
+        col_ver = max(col_ver, 7)
+        col_file = max(len(p['filename']) for p in unique_packages)
+        col_file = max(col_file, 35)
+        col_size = max(len(p['size']) for p in unique_packages)
+        col_size = max(col_size, 6)
+
+        table_header = f"+-{'-'*col_type}-+-{'-'*col_ver}-+-{'-'*col_file}-+-{'-'*col_size}-+-{'='*15}-+"
+        table_title  = f"| {'Package Type'.ljust(col_type)} | {'Version'.ljust(col_ver)} | {'Filename'.ljust(col_file)} | {'Size'.ljust(col_size)} | {'Download Link'.ljust(15)} |"
+        
+        table_rows = []
+        for p in unique_packages:
+            table_rows.append(
+                f"| {p['type'].ljust(col_type)} | {p['version'].ljust(col_ver)} | {p['filename'].ljust(col_file)} | {p['size'].ljust(col_size)} | {p['download'].ljust(15)} |"
+            )
+        
+        package_table_formatted = "\n".join([table_header, table_title, table_header] + table_rows + [table_header])
+    else:
+        package_table_formatted = "No specific packages staged."
+
+    docs_formatted = "\n".join([f"• {d['name']}: {d['url']}" for d in REF_DOCUMENTS])
+    steps_formatted = "\n\n".join(customer_act_sections)
 
     customer_email_body = f"""#TechConsult
 
@@ -348,62 +390,72 @@ Hello {cust_name.value or 'Customer'},
 
 I have completed the technical consultation and pre-checks for your PowerProtect DP upgrade.
 
+================================================================================
 CUSTOMER ACTION SUMMARY
+================================================================================
 
 Required:
-- Download required upgrade package(s).
-- Upload packages to the PowerProtect DP system.
-- Verify package checksum.
-- Review Release Notes and complete prerequisites.
-- Resolve upgrade-blocking issues.
-- Disable backup policies before the applicable upgrade activity.
+  • Download required upgrade package(s).
+  • Upload packages to the PowerProtect DP system.
+  • Verify package checksum.
+  • Review Release Notes and complete prerequisites.
+  • Resolve upgrade-blocking issues.
+  • Disable backup policies before the applicable upgrade activity.
 
 Recommended:
-- Review the Upgrade Preparation Guide.
-- Verify compatibility and upgrade requirements.
-- Ensure business continuity.
+  • Review the Upgrade Preparation Guide.
+  • Verify compatibility and upgrade requirements.
+  • Ensure business continuity.
 
+================================================================================
 TECHNICAL CONSULTATION DETAILS
-Customer Name: {cust_name.value}
-Customer Site / Location: {cust_loc.value}
-Upgrade SR: {sr_num.value}
-PowerProtect DP Serial Number: {serial_num.value}
-System Model: {sys_model.value}
-Current Code: {curr_code.value}
-Code Requested: {req_code.value}
-Code Recommended: {rec_code.value}
-Code Confirmed: {conf_code.value}
+================================================================================
+Customer Name              : {cust_name.value}
+Customer Site / Location   : {cust_loc.value}
+Upgrade SR                 : {sr_num.value}
+PowerProtect DP Serial No. : {serial_num.value}
+System Model               : {sys_model.value}
+Current Code               : {curr_code.value}
+Code Confirmed             : {conf_code.value}
 
 OVERALL HEALTH STATUS
-{health_status.value}
+  • {health_status.value}
 
 UPGRADE PATH
-{upgrade_path_str}
+  • {upgrade_path_str}
 
-UPGRADE STEPS
-""" + "\n".join(customer_act_lines) + f"""
+================================================================================
+UPGRADE SCHEDULE & STEPS
+================================================================================
+{steps_formatted}
 
+================================================================================
 UPGRADE PACKAGES
-Package Type | Version | Filename | Size | SHA256SUM | Download
-""" + "\n".join(customer_pkg_rows) + f"""
+================================================================================
+{package_table_formatted}
 
+================================================================================
 REFERENCE DOCUMENTS
+================================================================================
 {docs_formatted}
 
-DELL / SUPPORT RESPONSIBILITIES
-- Review system health and validate the upgrade path.
-- Perform applicable pre-checks.
-- Execute the upgrade according to the agreed plan.
-- Perform post-upgrade validation.
+================================================================================
+RESPONSIBILITIES
+================================================================================
+Dell / Support Responsibilities:
+  • Review system health and validate the upgrade path.
+  • Perform applicable pre-checks.
+  • Execute the upgrade according to the agreed plan.
+  • Perform post-upgrade validation.
 
-CUSTOMER RESPONSIBILITIES
-- Download and stage required software.
-- Verify package checksums.
-- Review the Upgrade Preparation Guide and Release Notes.
-- Complete prerequisites and compatibility checks.
-- Disable backup policies before the applicable activity.
-- Complete required client/proxy/plugin updates after the upgrade.
-- Resolve upgrade-blocking issues before the applicable activity.
+Customer Responsibilities:
+  • Download and stage required software.
+  • Verify package checksums.
+  • Review the Upgrade Preparation Guide and Release Notes.
+  • Complete prerequisites and compatibility checks.
+  • Disable backup policies before the applicable activity.
+  • Complete required client/proxy/plugin updates after the upgrade.
+  • Resolve upgrade-blocking issues before the applicable activity.
 
 Thank you,
 Dell Technologies Support"""
