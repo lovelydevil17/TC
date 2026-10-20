@@ -169,7 +169,6 @@ with ui.row().classes('w-full p-6 gap-6'):
                             inp_from = ui.select(['NA', '2.6.0', '2.7.2', '2.7.7', '2.7.9'], label='Upgrading From', value=from_v).classes('w-full text-xs')
                             inp_to = ui.select(['NA', '2.6.0', '2.7.2', '2.7.7', '2.7.9'], label='Upgrading To', value=to_v).classes('w-full text-xs')
 
-                            # Manual override or calculated duration display
                             duration_options = [round(x * 0.5, 1) for x in range(1, 25)]
                             inp_duration = ui.select(duration_options, label='Duration (Hours - Override)', value=duration_val).classes('w-full text-xs')
 
@@ -263,35 +262,39 @@ add_activity_card()
 # --- DURATION CALCULATION LOGIC ---
 def calculate_activity_duration(model_str, base_name, ndmp_cnt, add_acts, manual_duration):
     if manual_duration is not None:
-        duration_hrs = float(manual_duration)
+        raw_duration_hrs = float(manual_duration)
     else:
-        duration_hrs = 0.0
+        raw_duration_hrs = 0.0
         # 1. Base Model OE Duration
         if base_name in ['IDPA OE Code Upgrade', 'NA']:
-            duration_hrs += MODEL_BASE_DURATIONS.get(model_str, 9.0)
+            raw_duration_hrs += MODEL_BASE_DURATIONS.get(model_str, 9.0)
         elif base_name == 'DDOS Upgrade':
-            duration_hrs += 3.0
+            raw_duration_hrs += 3.0
         elif base_name == 'Hotfix Upgrade':
-            duration_hrs += 1.0
+            raw_duration_hrs += 1.0
 
         # 2. NDMP Duration (0.5h per count)
         ndmp_multiplier_map = {'Yes—1': 1, 'Yes—2': 2, 'Yes—3': 3, 'Yes—4': 4}
         if ndmp_cnt in ndmp_multiplier_map:
-            duration_hrs += ndmp_multiplier_map[ndmp_cnt] * 0.5
+            raw_duration_hrs += ndmp_multiplier_map[ndmp_cnt] * 0.5
         elif ndmp_cnt == 'Yes—Other':
-            duration_hrs += 0.5
+            raw_duration_hrs += 0.5
 
         # 3. Additional Component Durations
         if 'DDOS Upgrade' in add_acts and base_name != 'DDOS Upgrade':
-            duration_hrs += 3.0
+            raw_duration_hrs += 3.0
         if 'Hotfix Upgrade' in add_acts and base_name != 'Hotfix Upgrade':
-            duration_hrs += 1.0
+            raw_duration_hrs += 1.0
         if 'AVE /space expansion' in add_acts:
-            duration_hrs += 1.0
+            raw_duration_hrs += 1.0
 
-    # Rule: Internal planned duration = customer duration + 1-hour internal buffer
-    internal_planned_duration = duration_hrs + 1.0
-    return duration_hrs, internal_planned_duration
+    # Rule: Customer-facing duration in email reflects raw duration + 1-hour buffer
+    cust_buffered_duration = raw_duration_hrs + 1.0
+    
+    # Internal planned duration (for internal log template)
+    internal_planned_duration = raw_duration_hrs + 1.0
+
+    return raw_duration_hrs, cust_buffered_duration, internal_planned_duration
 
 
 def compute_combined_activity_name(base_name, ndmp_cnt, add_acts):
@@ -376,22 +379,23 @@ def process_tc_generation():
 
         act_name = compute_combined_activity_name(base_name, ndmp_cnt, add_acts_list)
         
-        # Calculate duration according to Section 11 Specification Rules
-        cust_duration, internal_planned_duration = calculate_activity_duration(
+        # Calculate duration
+        raw_hrs, cust_buffered_hrs, internal_planned_hrs = calculate_activity_duration(
             sys_model.value, base_name, ndmp_cnt, add_acts_list, manual_duration
         )
 
         internal_act_lines.append(
-            f"{act_rcm} | {act_name} | {act_from} → {act_to} | {act_date} | Duration: {cust_duration}h | Planned Duration: {internal_planned_duration}h (Internal Buffer +1h) | Status: {sched_status} | Multi-Step: {multi_step_flag}"
+            f"{act_rcm} | {act_name} | {act_from} → {act_to} | {act_date} | Base Duration: {raw_hrs}h | Planned Duration: {internal_planned_hrs}h (Internal Buffer +1h) | Status: {sched_status} | Multi-Step: {multi_step_flag}"
         )
 
+        # Customer Email Section: Displays buffered duration (+1 hour) without exposing actual raw calculation
         customer_act_sections.append(
             f"Step {idx}: {act_name}\n"
             f"  • RCM Activity ID   : {act_rcm}\n"
             f"  • Schedule Status   : {sched_status}\n"
             f"  • Version Transition: {act_from} → {act_to}\n"
             f"  • Scheduled Date    : {act_date}\n"
-            f"  • Duration          : {cust_duration} Hours\n"
+            f"  • Duration          : {cust_buffered_hrs} Hours\n"
             f"  • NDMP Count        : {ndmp_cnt}\n"
             f"  • Additional Acts   : {', '.join(add_acts_list)}"
         )
