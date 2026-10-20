@@ -57,17 +57,17 @@ with ui.row().classes('w-full p-6 gap-6'):
         with ui.card().classes('w-full p-5 border-l-4 border-blue-600 shadow-sm'):
             ui.label('1. Customer & System Details').classes('text-md font-bold text-blue-900 mb-2')
             with ui.grid(columns=2).classes('w-full gap-3'):
-                cust_name = ui.input('Customer Name *', value='ABC Corporation').classes('w-full')
-                cust_loc = ui.input('Customer Site / Location *', value='Chennai').classes('w-full')
-                sr_num = ui.input('Upgrade SR *', value='SR123456789').classes('w-full')
-                serial_num = ui.input('Serial Number *', value='DP-SN-123456').classes('w-full')
-                sys_model = ui.select(['Model 4x', 'Model 5x', 'Model 8x'], label='System Model *', value='Model 5x').classes('w-full')
-                curr_code = ui.input('Current Code *', value='2.6.0').classes('w-full')
-                req_code = ui.input('Code Requested *', value='2.7.9').classes('w-full')
-                rec_code = ui.input('Code Recommended *', value='2.7.9').classes('w-full')
-                conf_code = ui.input('Code Confirmed *', value='2.7.9').classes('w-full')
+                cust_name = ui.input('Customer Name *', value='').classes('w-full')
+                cust_loc = ui.input('Customer Site / Location *', value='').classes('w-full')
+                sr_num = ui.input('Upgrade SR *', value='').classes('w-full')
+                serial_num = ui.input('Serial Number *', value='').classes('w-full')
+                sys_model = ui.select(['NA', 'Model 4x', 'Model 5x', 'Model 8x'], label='System Model *', value='NA').classes('w-full')
+                curr_code = ui.select(['NA', '2.6.0', '2.7.2', '2.7.7', '2.7.9'], label='Current Code *', value='NA').classes('w-full')
+                req_code = ui.select(['NA', '2.6.0', '2.7.2', '2.7.7', '2.7.9'], label='Code Requested *', value='NA').classes('w-full')
+                rec_code = ui.select(['NA', '2.6.0', '2.7.2', '2.7.7', '2.7.9'], label='Code Recommended *', value='NA').classes('w-full')
+                conf_code = ui.select(['NA', '2.6.0', '2.7.2', '2.7.7', '2.7.9'], label='Code Confirmed *', value='NA').classes('w-full')
             
-            upg_notes = ui.input('Upgrade Request Notes', value='Single combined upgrade-request notes field.').classes('w-full mt-2')
+            upg_notes = ui.input('Upgrade Request Notes', value='').classes('w-full mt-2')
 
         with ui.card().classes('w-full p-5 border-l-4 border-teal-600 shadow-sm'):
             ui.label('2. System Health Checks').classes('text-md font-bold text-teal-900 mb-2')
@@ -122,7 +122,7 @@ with ui.row().classes('w-full p-6 gap-6'):
             
             activity_container = ui.column().classes('w-full gap-3')
 
-            def add_activity_card(rcm='TBD', name='IDPA OE Code Upgrade + NDMP Upgrade', from_v='2.6.0', to_v='2.7.2', sched='24-Sep-2026 10:00 AM', ndmp=True, ddos=False, hf=False, ave=False):
+            def add_activity_card(rcm='TBD', name='IDPA OE Code Upgrade + NDMP Upgrade', from_v='NA', to_v='NA', sched='TBD', ndmp=True, ddos=False, hf=False, ave=False):
                 with activity_container:
                     card = ui.card().classes('w-full p-3 bg-gray-50 border border-gray-200')
                     with card:
@@ -134,8 +134,8 @@ with ui.row().classes('w-full p-6 gap-6'):
                             inp_rcm = ui.input('RCM ID', value=rcm).classes('w-full text-xs')
                             inp_name = ui.input('Activity Name', value=name).classes('w-full text-xs')
                             inp_sched = ui.input('Scheduled Date/Time', value=sched).classes('w-full text-xs')
-                            inp_from = ui.input('From Version', value=from_v).classes('w-full text-xs')
-                            inp_to = ui.input('To Version', value=to_v).classes('w-full text-xs')
+                            inp_from = ui.select(['NA', '2.6.0', '2.7.2', '2.7.7', '2.7.9'], label='From Version', value=from_v).classes('w-full text-xs')
+                            inp_to = ui.select(['NA', '2.6.0', '2.7.2', '2.7.7', '2.7.9'], label='To Version', value=to_v).classes('w-full text-xs')
                         
                         with ui.row().classes('w-full gap-4 mt-2'):
                             chk_ndmp = ui.checkbox('NDMP', value=ndmp)
@@ -177,7 +177,7 @@ with ui.row().classes('w-full p-6 gap-6'):
             
             with ui.row().classes('w-full gap-2 mt-2'):
                 ui.button('📋 Copy SR Template', on_click=lambda: copy_to_clipboard(sr_text_output.value)).classes('bg-emerald-700 text-white')
-                ui.button('💾 Download SR Output (.txt)', on_click=lambda: download_file(sr_text_output.value, f"{sr_num.value}_SR_Summary.txt")).classes('bg-emerald-900 text-white')
+                ui.button('💾 Download SR Output (.txt)', on_click=lambda: download_file(sr_text_output.value, f"{sr_num.value or 'TC'}_SR_Summary.txt")).classes('bg-emerald-900 text-white')
 
         with ui.card().classes('w-full p-5 border-l-4 border-sky-600 shadow-sm'):
             ui.label('Customer Email Preview').classes('text-md font-bold text-sky-900 mb-2')
@@ -186,20 +186,14 @@ with ui.row().classes('w-full p-6 gap-6'):
             
             with ui.row().classes('w-full gap-2 mt-2'):
                 ui.button('📋 Copy Email Text', on_click=lambda: copy_to_clipboard(email_body_output.value)).classes('bg-sky-700 text-white')
-                ui.button('💾 Download Email (.txt)', on_click=lambda: download_file(email_body_output.value, f"{sr_num.value}_Customer_Email.txt")).classes('bg-sky-900 text-white')
-
-
-# Populate Pre-Set Activity Cards
-add_activity_card('RCM10001', 'IDPA OE Code Upgrade + NDMP Upgrade', '2.6.0', '2.7.2', '24-Sep-2026 10:00 AM', True, False, False, False)
-add_activity_card('RCM10002', 'IDPA OE Code Upgrade + NDMP Upgrade', '2.7.2', '2.7.7', '25-Sep-2026 10:00 AM', True, False, False, False)
-add_activity_card('TBD', 'IDPA OE Code Upgrade + NDMP Upgrade', '2.7.7', '2.7.9', 'TBD', True, False, False, False)
+                ui.button('💾 Download Email (.txt)', on_click=lambda: download_file(email_body_output.value, f"{sr_num.value or 'TC'}_Customer_Email.txt")).classes('bg-sky-900 text-white')
 
 
 # --- PROCESSING & FILE DOWNLOAD LOGIC ---
 def process_tc_generation():
     path_key = f"{curr_code.value}-{conf_code.value}"
-    target_steps = UPGRADE_PATHS.get(path_key, [conf_code.value])
-    upgrade_path_str = " → ".join([curr_code.value] + target_steps)
+    target_steps = UPGRADE_PATHS.get(path_key, [conf_code.value] if conf_code.value != 'NA' else [])
+    upgrade_path_str = " → ".join([curr_code.value] + target_steps) if curr_code.value != 'NA' else 'NA'
 
     base_oe_hours = MODEL_BASE_DURATIONS.get(sys_model.value, 9.0)
 
@@ -233,24 +227,25 @@ def process_tc_generation():
             f"{act_rcm} | {act_name} | {act_from} → {act_to} | {act_date}"
         )
 
-        oe_pkg = next((p for p in PACKAGE_DATABASE if p["type"] == "IDPA OE" and p["version"] == act_to), None)
-        if oe_pkg: required_packages.append(oe_pkg)
+        if act_to != 'NA':
+            oe_pkg = next((p for p in PACKAGE_DATABASE if p["type"] == "IDPA OE" and p["version"] == act_to), None)
+            if oe_pkg: required_packages.append(oe_pkg)
 
-        if has_ndmp:
-            ndmp_pkg = next((p for p in PACKAGE_DATABASE if p["type"] == "NDMP" and p["applicableFor"] == f"NDMP for {act_to}"), None)
-            if ndmp_pkg: required_packages.append(ndmp_pkg)
+            if has_ndmp:
+                ndmp_pkg = next((p for p in PACKAGE_DATABASE if p["type"] == "NDMP" and p["applicableFor"] == f"NDMP for {act_to}"), None)
+                if ndmp_pkg: required_packages.append(ndmp_pkg)
 
-        if has_hf:
-            hf_pkg = next((p for p in PACKAGE_DATABASE if p["type"] == "Hotfix" and p["applicableFor"] == act_to), None)
-            if hf_pkg: required_packages.append(hf_pkg)
+            if has_hf:
+                hf_pkg = next((p for p in PACKAGE_DATABASE if p["type"] == "Hotfix" and p["applicableFor"] == act_to), None)
+                if hf_pkg: required_packages.append(hf_pkg)
 
-        if has_ave and act_to == "2.7.2":
-            ave_pkg = next((p for p in PACKAGE_DATABASE if p["type"] == "AVE /space"), None)
-            if ave_pkg: required_packages.append(ave_pkg)
+            if has_ave and act_to == "2.7.2":
+                ave_pkg = next((p for p in PACKAGE_DATABASE if p["type"] == "AVE /space"), None)
+                if ave_pkg: required_packages.append(ave_pkg)
 
-        if has_ddos:
-            ddos_pkg = next((p for p in PACKAGE_DATABASE if p["type"] == "DDOS"), None)
-            if ddos_pkg: required_packages.append(ddos_pkg)
+            if has_ddos:
+                ddos_pkg = next((p for p in PACKAGE_DATABASE if p["type"] == "DDOS"), None)
+                if ddos_pkg: required_packages.append(ddos_pkg)
 
     seen_ids = set()
     unique_packages = []
@@ -306,7 +301,7 @@ Action Taken: {scheduling_action.value}"""
 
     customer_email_body = f"""#TechConsult
 
-Hello {cust_name.value},
+Hello {cust_name.value or 'Customer'},
 
 I have completed the technical consultation and pre-checks for your PowerProtect DP upgrade.
 
@@ -371,7 +366,7 @@ Thank you,
 Dell Technologies Support"""
 
     sr_text_output.value = sr_template
-    email_subject_output.value = f"PowerProtect DP Upgrade Technical Consultation & Schedule — {sr_num.value}"
+    email_subject_output.value = f"PowerProtect DP Upgrade Technical Consultation & Schedule — {sr_num.value or 'SR'}"
     email_body_output.value = customer_email_body
 
     ui.notify('Technical Consultation Output Generated Successfully!', type='positive')
