@@ -54,6 +54,7 @@ with ui.row().classes('w-full p-6 gap-6'):
     # LEFT COLUMN: INPUT CONTROLS
     with ui.column().classes('flex-1 gap-6'):
 
+        # SECTION 1: CUSTOMER & SYSTEM DETAILS
         with ui.card().classes('w-full p-5 border-l-4 border-blue-600 shadow-sm'):
             ui.label('1. Customer & System Details').classes('text-md font-bold text-blue-900 mb-2')
             with ui.grid(columns=2).classes('w-full gap-3'):
@@ -69,60 +70,70 @@ with ui.row().classes('w-full p-6 gap-6'):
             
             upg_notes = ui.input('Upgrade Request Notes', value='').classes('w-full mt-2')
 
+        # SECTION 2: SYSTEM HEALTH CHECKS
         with ui.card().classes('w-full p-5 border-l-4 border-teal-600 shadow-sm'):
             ui.label('2. System Health Checks').classes('text-md font-bold text-teal-900 mb-2')
             with ui.grid(columns=2).classes('w-full gap-3'):
-                acm_dashboard = ui.select(['Good', 'Issues found - remediated', 'Issues found - outstanding'], label='ACM Dashboard Status *', value='Good').classes('w-full')
+                acm_dashboard = ui.select(['NA', 'Good', 'Issues found - remediated', 'Issues found - outstanding'], label='ACM Dashboard Status *', value='NA').classes('w-full')
                 pdf_status = ui.select([
+                    'NA',
                     'Good — downloaded and attached to SR (Prefixed with Tech Consult)',
                     'Issue — PDF download fails; all other health checks pass; retest post-upgrade and raise support ticket if needed'
-                ], label='PDF Status *', value='Good — downloaded and attached to SR (Prefixed with Tech Consult)').classes('w-full')
-                ruck_status = ui.select(['Good', 'Issues remediated', 'Issues pending'], label='RUCK Status *', value='Good').classes('w-full')
+                ], label='PDF Status *', value='NA').classes('w-full')
+                ruck_status = ui.select(['NA', 'Good', 'Issues remediated', 'Issues pending'], label='RUCK Status *', value='NA').classes('w-full')
                 acm_snapshot = ui.select([
+                    'NA',
                     'No VM Snapshot discovered',
                     'VM Snapshot discovered — customer confirmed removal before upgrade using KB 000218806',
                     'Removal pending'
-                ], label='ACM VM Snapshot *', value='No VM Snapshot discovered').classes('w-full')
+                ], label='ACM VM Snapshot *', value='NA').classes('w-full')
                 validation_status = ui.select([
+                    'NA',
                     'Code Downloaded and Validation Passed',
                     'Downloaded but validation not run',
                     'Downloaded and validation failed',
                     'Code not downloaded'
-                ], label='Validation Status *', value='Code Downloaded and Validation Passed').classes('w-full')
-                idrac_status = ui.select(['Configured and Accessible', 'Configured but Not Accessible', 'Not Configured'], label='iDRAC Status *', value='Configured and Accessible').classes('w-full')
-                exceptional_tasks = ui.select(['No Action Required', 'Review RCM Activity Notes', 'Action Required'], label='Exceptional Tasks *', value='No Action Required').classes('w-full')
+                ], label='Validation Status *', value='NA').classes('w-full')
+                idrac_status = ui.select(['NA', 'Configured and Accessible', 'Configured but Not Accessible', 'Not Configured'], label='iDRAC Status *', value='NA').classes('w-full')
+                exceptional_tasks = ui.select(['NA', 'No Action Required', 'Review RCM Activity Notes', 'Action Required'], label='Exceptional Tasks *', value='NA').classes('w-full')
                 health_status = ui.select([
+                    'NA',
                     'IDPA is healthy and ready for upgrade — No issues found. Proceed as scheduled.',
                     'IDPA is healthy and ready for upgrade — Issues found were remediated or are not upgrade-related. Proceed as scheduled.',
                     'IDPA is not healthy for upgrade — Issues identified with associated remediation plan.'
-                ], label='Overall Upgrade Health Status *', value='IDPA is healthy and ready for upgrade — No issues found. Proceed as scheduled.').classes('w-full')
+                ], label='Overall Upgrade Health Status *', value='NA').classes('w-full')
 
+        # SECTION 3: UPGRADE PREPARATION INPUTS
         with ui.card().classes('w-full p-5 border-l-4 border-indigo-600 shadow-sm'):
             ui.label('3. Upgrade Preparation Inputs').classes('text-md font-bold text-indigo-900 mb-2')
             with ui.grid(columns=3).classes('w-full gap-3'):
                 upg_review = ui.select([
+                    'NA',
                     'Customer has already reviewed the UPG, and did not have any further questions',
                     'Customer has already reviewed the UPG, and I have addressed the follow-up questions',
                     'Customer has not reviewed the UPG'
-                ], label='UPG Review *', value='Customer has already reviewed the UPG, and did not have any further questions').classes('w-full')
+                ], label='UPG Review *', value='NA').classes('w-full')
                 prereqs_status = ui.select([
+                    'NA',
                     'Customer meets upgrade requirements and acknowledged prerequisites',
                     'Customer does not meet requirements/prerequisites',
                     'Requirements review pending'
-                ], label='Prerequisites Status *', value='Customer meets upgrade requirements and acknowledged prerequisites').classes('w-full')
+                ], label='Prerequisites Status *', value='NA').classes('w-full')
                 download_status = ui.select([
+                    'NA',
                     'Code downloaded and ready',
                     'Customer will follow instructions in pre-check report email',
                     'Already downloaded; customer will upload prior to upgrade',
                     'Code not downloaded'
-                ], label='Code Download Status *', value='Code downloaded and ready').classes('w-full')
+                ], label='Code Download Status *', value='NA').classes('w-full')
 
+        # SECTION 4: RCM SCHEDULE & ACTIVITIES
         with ui.card().classes('w-full p-5 border-l-4 border-amber-600 shadow-sm'):
             ui.label('4. RCM Schedule & Activities').classes('text-md font-bold text-amber-900 mb-2')
             
             activity_container = ui.column().classes('w-full gap-3')
 
-            def add_activity_card(rcm='TBD', name='IDPA OE Code Upgrade + NDMP Upgrade', from_v='NA', to_v='NA', sched='TBD', ndmp=True, ddos=False, hf=False, ave=False):
+            def add_activity_card(rcm='TBD', name='NA', from_v='NA', to_v='NA', date_val='', time_val='10:00', ndmp=False, ddos=False, hf=False, ave=False):
                 with activity_container:
                     card = ui.card().classes('w-full p-3 bg-gray-50 border border-gray-200')
                     with card:
@@ -130,13 +141,33 @@ with ui.row().classes('w-full p-6 gap-6'):
                             ui.label('Activity Step Input').classes('font-bold text-xs text-gray-700')
                             ui.button(icon='delete', color='negative', on_click=lambda: remove_activity_card(card_data)).props('flat round dense')
                         
-                        with ui.grid(columns=3).classes('w-full gap-2'):
+                        with ui.grid(columns=3).classes('w-full gap-2 items-center'):
                             inp_rcm = ui.input('RCM ID', value=rcm).classes('w-full text-xs')
-                            inp_name = ui.input('Activity Name', value=name).classes('w-full text-xs')
-                            inp_sched = ui.input('Scheduled Date/Time', value=sched).classes('w-full text-xs')
+                            
+                            inp_name = ui.select([
+                                'NA',
+                                'IDPA OE Code Upgrade + NDMP Upgrade',
+                                'IDPA OE Standalone Upgrade',
+                                'NDMP Patch Upgrade',
+                                'DDOS Code Upgrade',
+                                'Hotfix / Security Patch Installation',
+                                'AVE /space Expansion'
+                            ], label='Activity Name *', value=name).classes('w-full text-xs')
+                            
                             inp_from = ui.select(['NA', '2.6.0', '2.7.2', '2.7.7', '2.7.9'], label='From Version', value=from_v).classes('w-full text-xs')
                             inp_to = ui.select(['NA', '2.6.0', '2.7.2', '2.7.7', '2.7.9'], label='To Version', value=to_v).classes('w-full text-xs')
-                        
+
+                            # Date Picker Input (Calendar Popup)
+                            with ui.input('Scheduled Date', value=date_val).classes('w-full text-xs') as inp_date:
+                                with inp_date.add_slot('append'):
+                                    ui.icon('event').classes('cursor-pointer').on('click', lambda: date_menu.open())
+                                with ui.menu() as date_menu:
+                                    ui.date().bind_value(inp_date)
+
+                            # Time Picker Input (24-Hour Dropdown Select)
+                            time_options = [f"{h:02d}:{m:02d}" for h in range(24) for m in (0, 30)]
+                            inp_time = ui.select(time_options, label='Time (24h)', value=time_val).classes('w-full text-xs')
+
                         with ui.row().classes('w-full gap-4 mt-2'):
                             chk_ndmp = ui.checkbox('NDMP', value=ndmp)
                             chk_ddos = ui.checkbox('DDOS Upgrade', value=ddos)
@@ -145,7 +176,8 @@ with ui.row().classes('w-full p-6 gap-6'):
 
                         card_data = {
                             'card_widget': card,
-                            'rcm': inp_rcm, 'name': inp_name, 'sched': inp_sched,
+                            'rcm': inp_rcm, 'name': inp_name,
+                            'date': inp_date, 'time': inp_time,
                             'from': inp_from, 'to': inp_to,
                             'ndmp': chk_ndmp, 'ddos': chk_ddos, 'hf': chk_hf, 'ave': chk_ave
                         }
@@ -157,14 +189,16 @@ with ui.row().classes('w-full p-6 gap-6'):
 
             ui.button('+ Add Upgrade Step', on_click=lambda: add_activity_card()).classes('bg-amber-700 text-white text-xs')
 
+        # SECTION 5: SCHEDULING ACTIONS
         with ui.card().classes('w-full p-5 border-l-4 border-purple-600 shadow-sm'):
             ui.label('5. Scheduling Actions').classes('text-md font-bold text-purple-900 mb-2')
             scheduling_action = ui.select([
+                'NA',
                 'No issues; no further scheduling required - Reserved slot converted',
                 'Requires rescheduling Tech Consult after issues are resolved - Reserved slot not converted',
                 'Issues found but not upgrade-blocking - Reserved slot converted',
                 'Upgrade-blocking issues found; must be resolved before upgrade - Reserved slot converted'
-            ], label='Action Taken *', value='No issues; no further scheduling required - Reserved slot converted').classes('w-full')
+            ], label='Action Taken *', value='NA').classes('w-full')
 
         ui.button('⚡ Generate Deliverables', on_click=lambda: process_tc_generation()).classes('w-full bg-blue-700 text-white font-bold p-3 text-base shadow-md')
 
@@ -189,6 +223,10 @@ with ui.row().classes('w-full p-6 gap-6'):
                 ui.button('💾 Download Email (.txt)', on_click=lambda: download_file(email_body_output.value, f"{sr_num.value or 'TC'}_Customer_Email.txt")).classes('bg-sky-900 text-white')
 
 
+# Add 1 initial empty activity step card by default
+add_activity_card()
+
+
 # --- PROCESSING & FILE DOWNLOAD LOGIC ---
 def process_tc_generation():
     path_key = f"{curr_code.value}-{conf_code.value}"
@@ -205,7 +243,12 @@ def process_tc_generation():
         act_from = row['from'].value
         act_to = row['to'].value
         act_rcm = row['rcm'].value if row['rcm'].value else "TBD"
-        act_date = row['sched'].value if row['sched'].value else "TBD"
+        
+        # Combine Date and 24h Time into single string
+        date_part = row['date'].value if row['date'].value else ""
+        time_part = row['time'].value if row['time'].value else ""
+        act_date = f"{date_part} {time_part}".strip() if (date_part or time_part) else "TBD"
+        
         act_name = row['name'].value
 
         has_ndmp = row['ndmp'].value
