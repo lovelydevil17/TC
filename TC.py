@@ -1,3 +1,4 @@
+ï»¿# -*- coding: utf-8 -*-
 import os
 from nicegui import ui, app
 import json
@@ -44,7 +45,7 @@ activity_rows = []
 with ui.header().classes('bg-blue-900 text-white items-center justify-between p-4 shadow-md'):
     with ui.row().classes('items-center gap-2'):
         ui.icon('build', size='md')
-        ui.label('PowerProtect DP — Technical Consultation (TC) Portal').classes('text-xl font-bold')
+        ui.label('PowerProtect DP â€” Technical Consultation (TC) Portal').classes('text-xl font-bold')
     ui.chip('Spec v1.0 Compliant', color='blue-6').classes('text-white')
 
 # --- MAIN FORM LAYOUT ---
@@ -73,13 +74,13 @@ with ui.row().classes('w-full p-6 gap-6'):
             with ui.grid(columns=2).classes('w-full gap-3'):
                 acm_dashboard = ui.select(['Good', 'Issues found - remediated', 'Issues found - outstanding'], label='ACM Dashboard Status *', value='Good').classes('w-full')
                 pdf_status = ui.select([
-                    'Good — downloaded and attached to SR (Prefixed with Tech Consult)',
-                    'Issue — PDF download fails; all other health checks pass; retest post-upgrade and raise support ticket if needed'
-                ], label='PDF Status *', value='Good — downloaded and attached to SR (Prefixed with Tech Consult)').classes('w-full')
+                    'Good â€” downloaded and attached to SR (Prefixed with Tech Consult)',
+                    'Issue â€” PDF download fails; all other health checks pass; retest post-upgrade and raise support ticket if needed'
+                ], label='PDF Status *', value='Good â€” downloaded and attached to SR (Prefixed with Tech Consult)').classes('w-full')
                 ruck_status = ui.select(['Good', 'Issues remediated', 'Issues pending'], label='RUCK Status *', value='Good').classes('w-full')
                 acm_snapshot = ui.select([
                     'No VM Snapshot discovered',
-                    'VM Snapshot discovered — customer confirmed removal before upgrade using KB 000218806',
+                    'VM Snapshot discovered â€” customer confirmed removal before upgrade using KB 000218806',
                     'Removal pending'
                 ], label='ACM VM Snapshot *', value='No VM Snapshot discovered').classes('w-full')
                 validation_status = ui.select([
@@ -91,10 +92,10 @@ with ui.row().classes('w-full p-6 gap-6'):
                 idrac_status = ui.select(['Configured and Accessible', 'Configured but Not Accessible', 'Not Configured'], label='iDRAC Status *', value='Configured and Accessible').classes('w-full')
                 exceptional_tasks = ui.select(['No Action Required', 'Review RCM Activity Notes', 'Action Required'], label='Exceptional Tasks *', value='No Action Required').classes('w-full')
                 health_status = ui.select([
-                    'IDPA is healthy and ready for upgrade — No issues found. Proceed as scheduled.',
-                    'IDPA is healthy and ready for upgrade — Issues found were remediated or are not upgrade-related. Proceed as scheduled.',
-                    'IDPA is not healthy for upgrade — Issues identified with associated remediation plan.'
-                ], label='Overall Upgrade Health Status *', value='IDPA is healthy and ready for upgrade — No issues found. Proceed as scheduled.').classes('w-full')
+                    'IDPA is healthy and ready for upgrade â€” No issues found. Proceed as scheduled.',
+                    'IDPA is healthy and ready for upgrade â€” Issues found were remediated or are not upgrade-related. Proceed as scheduled.',
+                    'IDPA is not healthy for upgrade â€” Issues identified with associated remediation plan.'
+                ], label='Overall Upgrade Health Status *', value='IDPA is healthy and ready for upgrade â€” No issues found. Proceed as scheduled.').classes('w-full')
 
         with ui.card().classes('w-full p-5 border-l-4 border-indigo-600 shadow-sm'):
             ui.label('3. Upgrade Preparation Inputs').classes('text-md font-bold text-indigo-900 mb-2')
@@ -165,7 +166,7 @@ with ui.row().classes('w-full p-6 gap-6'):
                 'Upgrade-blocking issues found; must be resolved before upgrade - Reserved slot converted'
             ], label='Action Taken *', value='No issues; no further scheduling required - Reserved slot converted').classes('w-full')
 
-        ui.button('? Generate Deliverables', on_click=lambda: process_tc_generation()).classes('w-full bg-blue-700 text-white font-bold p-3 text-base shadow-md')
+        ui.button('âš¡ Generate Deliverables', on_click=lambda: process_tc_generation()).classes('w-full bg-blue-700 text-white font-bold p-3 text-base shadow-md')
 
     # RIGHT COLUMN: OUTPUT PREVIEW & DOWNLOAD OPTIONS
     with ui.column().classes('flex-1 gap-6'):
@@ -175,8 +176,8 @@ with ui.row().classes('w-full p-6 gap-6'):
             sr_text_output = ui.textarea().classes('w-full font-mono text-xs').props('rows=14 readonly')
             
             with ui.row().classes('w-full gap-2 mt-2'):
-                ui.button('?? Copy SR Template', on_click=lambda: copy_to_clipboard(sr_text_output.value)).classes('bg-emerald-700 text-white')
-                ui.button('?? Download SR Output (.txt)', on_click=lambda: download_file(sr_text_output.value, f"{sr_num.value}_SR_Summary.txt")).classes('bg-emerald-900 text-white')
+                ui.button('ðŸ“‹ Copy SR Template', on_click=lambda: copy_to_clipboard(sr_text_output.value)).classes('bg-emerald-700 text-white')
+                ui.button('ðŸ’¾ Download SR Output (.txt)', on_click=lambda: download_file(sr_text_output.value, f"{sr_num.value}_SR_Summary.txt")).classes('bg-emerald-900 text-white')
 
         with ui.card().classes('w-full p-5 border-l-4 border-sky-600 shadow-sm'):
             ui.label('Customer Email Preview').classes('text-md font-bold text-sky-900 mb-2')
@@ -184,8 +185,8 @@ with ui.row().classes('w-full p-6 gap-6'):
             email_body_output = ui.textarea().classes('w-full font-mono text-xs').props('rows=14 readonly')
             
             with ui.row().classes('w-full gap-2 mt-2'):
-                ui.button('?? Copy Email Text', on_click=lambda: copy_to_clipboard(email_body_output.value)).classes('bg-sky-700 text-white')
-                ui.button('?? Download Email (.txt)', on_click=lambda: download_file(email_body_output.value, f"{sr_num.value}_Customer_Email.txt")).classes('bg-sky-900 text-white')
+                ui.button('ðŸ“‹ Copy Email Text', on_click=lambda: copy_to_clipboard(email_body_output.value)).classes('bg-sky-700 text-white')
+                ui.button('ðŸ’¾ Download Email (.txt)', on_click=lambda: download_file(email_body_output.value, f"{sr_num.value}_Customer_Email.txt")).classes('bg-sky-900 text-white')
 
 
 # Populate Pre-Set Activity Cards
@@ -198,7 +199,7 @@ add_activity_card('TBD', 'IDPA OE Code Upgrade + NDMP Upgrade', '2.7.7', '2.7.9'
 def process_tc_generation():
     path_key = f"{curr_code.value}-{conf_code.value}"
     target_steps = UPGRADE_PATHS.get(path_key, [conf_code.value])
-    upgrade_path_str = " ? ".join([curr_code.value] + target_steps)
+    upgrade_path_str = " â†’ ".join([curr_code.value] + target_steps)
 
     base_oe_hours = MODEL_BASE_DURATIONS.get(sys_model.value, 9.0)
 
@@ -226,10 +227,10 @@ def process_tc_generation():
         internal_planned_duration = base_oe_hours + ndmp_hrs + ddos_hrs + hf_hrs + ave_hrs + 1.0
 
         internal_act_lines.append(
-            f"{act_rcm} | {act_name} | {act_from} ? {act_to} | {act_date} | Planned Duration: {internal_planned_duration} Hours (Internal)"
+            f"{act_rcm} | {act_name} | {act_from} â†’ {act_to} | {act_date} | Planned Duration: {internal_planned_duration} Hours (Internal)"
         )
         customer_act_lines.append(
-            f"{act_rcm} | {act_name} | {act_from} ? {act_to} | {act_date}"
+            f"{act_rcm} | {act_name} | {act_from} â†’ {act_to} | {act_date}"
         )
 
         oe_pkg = next((p for p in PACKAGE_DATABASE if p["type"] == "IDPA OE" and p["version"] == act_to), None)
@@ -370,7 +371,7 @@ Thank you,
 Dell Technologies Support"""
 
     sr_text_output.value = sr_template
-    email_subject_output.value = f"PowerProtect DP Upgrade Technical Consultation & Schedule — {sr_num.value}"
+    email_subject_output.value = f"PowerProtect DP Upgrade Technical Consultation & Schedule â€” {sr_num.value}"
     email_body_output.value = customer_email_body
 
     ui.notify('Technical Consultation Output Generated Successfully!', type='positive')
