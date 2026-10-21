@@ -108,12 +108,17 @@ with ui.row().classes('w-full p-6 gap-6'):
                 
                 idrac_status = ui.select(['NA', 'Configured and Accessible', 'Configured but Not Accessible', 'Not Configured'], label='iDRAC Status *', value='NA').classes('w-full')
                 exceptional_tasks = ui.select(['NA', 'No Action Required', 'Review RCM Activity Notes', 'Action Required'], label='Exceptional Tasks *', value='NA').classes('w-full')
-                health_status = ui.select([
-                    'NA',
-                    'IDPA is healthy and ready for upgrade — No issues found. Proceed as scheduled.',
-                    'IDPA is healthy and ready for upgrade — Issues found were remediated or are not upgrade-related. Proceed as scheduled.',
-                    'IDPA is not healthy for upgrade — Issues identified with associated remediation plan.'
-                ], label='Overall Upgrade Health Status *', value='NA').classes('w-full')
+                
+                # Overall Upgrade Health Status + Conditional Unhealthy Details Input
+                with ui.column().classes('w-full gap-1 col-span-2'):
+                    health_status = ui.select([
+                        'NA',
+                        'IDPA is healthy and ready for upgrade — No issues found. Proceed as scheduled.',
+                        'IDPA is healthy and ready for upgrade — Issues found were remediated or are not upgrade-related. Proceed as scheduled.',
+                        'IDPA is not healthy for upgrade — Issues identified with associated remediation plan.'
+                    ], label='Overall Upgrade Health Status *', value='NA').classes('w-full')
+                    health_issue_details = ui.input('Health Issue / Remediation Plan Details', value='').classes('w-full text-xs')
+                    health_issue_details.bind_visibility_from(health_status, 'value', backward=lambda v: 'not healthy' in str(v))
 
         # SECTION 3: UPGRADE PREPARATION INPUTS
         with ui.card().classes('w-full p-5 border-l-4 border-indigo-600 shadow-sm'):
@@ -421,6 +426,8 @@ def process_tc_generation():
 
     acm_val_str = f"{acm_dashboard.value}" + (f" (Details: {acm_details.value})" if acm_details.value and 'Issues' in acm_dashboard.value else "")
     ruck_val_str = f"{ruck_status.value}" + (f" (Details: {ruck_details.value})" if ruck_details.value and 'Issues' in ruck_status.value else "")
+    
+    health_val_str = f"{health_status.value}" + (f" (Remediation Plan Details: {health_issue_details.value})" if health_issue_details.value and 'not healthy' in health_status.value else "")
 
     sr_template = f"""*** POWERPROTECT DP TECHNICAL CONSULTATION (TC) SUMMARY ***
 
@@ -444,7 +451,7 @@ ACM VM Snapshot: {acm_snapshot.value}
 Validation Status: {validation_status.value}
 iDRAC Status: {idrac_status.value}
 Exceptional Tasks: {exceptional_tasks.value}
-Upgrade Health Status: {health_status.value}
+Upgrade Health Status: {health_val_str}
 
 3. UPGRADE PREPARATION STATUS
 UPG Review: {upg_review.value}
@@ -522,6 +529,7 @@ Code Confirmed             : {conf_code.value}
 
 OVERALL HEALTH STATUS
   • {health_status.value}
+{f"  • Remediation Details: {health_issue_details.value}" if health_issue_details.value and 'not healthy' in health_status.value else ""}
 
 UPGRADE PATH
   • {upgrade_path_str}
@@ -584,7 +592,6 @@ def download_eml_file(subject, body, filename):
         ui.notify('Please generate deliverables first!', type='warning')
         return
     
-    # Construct RFC 5322 .eml format payload compatible with Outlook
     eml_content = (
         f"Subject: {subject}\n"
         f"From: support@dell.com\n"
