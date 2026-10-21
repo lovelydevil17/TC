@@ -18,6 +18,13 @@ UPGRADE_PATHS = {
     "2.7.9": ["DDOS Upgrade", "Hotfix Upgrade"]
 }
 
+AUTO_NEXT_VERSION = {
+    "2.6.0": "2.7.2",
+    "2.7.2": "2.7.7",
+    "2.7.7": "2.7.9",
+    "2.7.9": "DDOS Upgrade"
+}
+
 PACKAGE_DATABASE = [
     {"id": "PKG001", "type": "IDPA OE", "version": "2.7.2", "filename": "idpa-hw-upgrade-2.7.2-example.tar.gz", "size": "61 GB", "sha256": "EXAMPLE_SHA256_272", "download": "https://example.com/download/idpa-2.7.2", "applicableFor": "2.7.2"},
     {"id": "PKG002", "type": "NDMP", "version": "19.4", "filename": "ndmp-upgrade-19.4-example.zip", "size": "2 GB", "sha256": "EXAMPLE_SHA256_NDMP194", "download": "https://example.com/download/ndmp-19.4", "applicableFor": "NDMP for 2.7.2"},
@@ -243,7 +250,6 @@ with ui.row().classes('w-full p-6 gap-6'):
                                 inp_from_other = ui.input('Specify Upgrading From', value='').classes('w-full text-xs')
                                 inp_from_other.bind_visibility_from(inp_from, 'value', backward=lambda v: str(v) == 'Other')
 
-                            # Dynamic Upgrading To options filtering out selected "Upgrading From" version
                             def get_filtered_to_options(selected_from):
                                 curr = curr_code.value if curr_code.value != 'NA' else selected_from
                                 allowed = UPGRADE_PATHS.get(curr, ['2.7.2', '2.7.7', '2.7.9', 'DDOS Upgrade', 'Hotfix Upgrade'])
@@ -255,7 +261,14 @@ with ui.row().classes('w-full p-6 gap-6'):
                                 inp_to_other = ui.input('Specify Upgrading To', value='').classes('w-full text-xs')
                                 inp_to_other.bind_visibility_from(inp_to, 'value', backward=lambda v: str(v) == 'Other')
 
-                            inp_from.on('update:value', lambda e: inp_to.set_options(get_filtered_to_options(e.value)))
+                            # Auto-mapping logic for 'Upgrading To' based on 'Upgrading From'
+                            def on_from_change(e):
+                                new_from = e.value
+                                inp_to.set_options(get_filtered_to_options(new_from))
+                                if new_from in AUTO_NEXT_VERSION:
+                                    inp_to.value = AUTO_NEXT_VERSION[new_from]
+
+                            inp_from.on('update:value', on_from_change)
                             curr_code.on('update:value', lambda e: inp_to.set_options(get_filtered_to_options(inp_from.value)))
 
                             duration_options = [round(x * 0.5, 1) for x in range(1, 25)]
