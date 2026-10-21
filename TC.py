@@ -50,7 +50,7 @@ activity_rows = []
 
 # --- CORE AUTO DURATION CALCULATION HELPER ---
 def compute_raw_duration(model_str, base_name, ndmp_cnt, add_acts):
-    if model_str == 'NA':
+    if model_str == 'NA' or not model_str:
         return 0.0
         
     raw_duration_hrs = 0.0
@@ -67,12 +67,13 @@ def compute_raw_duration(model_str, base_name, ndmp_cnt, add_acts):
     elif ndmp_cnt == 'Yes—Other':
         raw_duration_hrs += 0.5
 
-    if 'DDOS Upgrade' in add_acts and base_name != 'DDOS Upgrade':
-        raw_duration_hrs += 3.0
-    if 'Hotfix Upgrade' in add_acts and base_name != 'Hotfix Upgrade':
-        raw_duration_hrs += 1.0
-    if 'AVE /space expansion' in add_acts:
-        raw_duration_hrs += 1.0
+    if isinstance(add_acts, list):
+        if 'DDOS Upgrade' in add_acts and base_name != 'DDOS Upgrade':
+            raw_duration_hrs += 3.0
+        if 'Hotfix Upgrade' in add_acts and base_name != 'Hotfix Upgrade':
+            raw_duration_hrs += 1.0
+        if 'AVE /space expansion' in add_acts:
+            raw_duration_hrs += 1.0
 
     return raw_duration_hrs
 
@@ -307,8 +308,9 @@ with ui.row().classes('w-full p-6 gap-6'):
                                 if auto_calc in duration_options:
                                     inp_duration.value = auto_calc
 
-                            inp_name.on('update:value', lambda _: update_auto_duration())
-                            sys_model.on('update:value', lambda _: update_auto_duration())
+                            # Bind reactivity updates using on_change
+                            inp_name.on_change(lambda _: update_auto_duration())
+                            sys_model.on_change(lambda _: update_auto_duration())
 
                             def on_from_change(e):
                                 new_from = e.value
@@ -316,8 +318,8 @@ with ui.row().classes('w-full p-6 gap-6'):
                                 if new_from in AUTO_NEXT_VERSION:
                                     inp_to.value = AUTO_NEXT_VERSION[new_from]
 
-                            inp_from.on('update:value', on_from_change)
-                            curr_code.on('update:value', lambda e: inp_to.set_options(get_filtered_to_options(inp_from.value)))
+                            inp_from.on_change(on_from_change)
+                            curr_code.on_change(lambda e: inp_to.set_options(get_filtered_to_options(inp_from.value)))
 
                             with ui.input('Scheduled Date', value=date_val).classes('w-full text-xs') as inp_date:
                                 with inp_date.add_slot('append'):
@@ -330,7 +332,7 @@ with ui.row().classes('w-full p-6 gap-6'):
 
                         with ui.row().classes('w-full gap-2 mt-2 items-center'):
                             inp_ndmp_count = ui.select(['No', 'Yes—1', 'Yes—2', 'Yes—3', 'Yes—4', 'Yes—Other'], label='NDMP Upgrade / Count', value=ndmp_count).classes('w-1/2 text-xs')
-                            inp_ndmp_count.on('update:value', lambda _: update_auto_duration())
+                            inp_ndmp_count.on_change(lambda _: update_auto_duration())
 
                             inp_ndmp_details = ui.input('NDMP Count Details', value=ndmp_details).classes('w-1/2 text-xs')
                             inp_ndmp_details.bind_visibility_from(inp_ndmp_count, 'value', backward=lambda v: v == 'Yes—Other')
@@ -344,7 +346,7 @@ with ui.row().classes('w-full p-6 gap-6'):
                                 'Hotfix Upgrade',
                                 'Other'
                             ], multiple=True, label='Additional Activities', value=add_acts).classes('w-1/2 text-xs')
-                            inp_add_acts.on('update:value', lambda _: update_auto_duration())
+                            inp_add_acts.on_change(lambda _: update_auto_duration())
                             
                             inp_add_act_details = ui.input('Additional Activity Details', value=add_act_details).classes('w-1/2 text-xs')
                             inp_add_act_details.bind_visibility_from(inp_add_acts, 'value', backward=lambda v: isinstance(v, list) and 'Other' in v)
