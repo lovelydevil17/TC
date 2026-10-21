@@ -65,7 +65,8 @@ with ui.row().classes('w-full p-6 gap-6'):
                 '2.7.7', 
                 '2.7.9', 
                 'DDOS Upgrade', 
-                'Hotfix Upgrade'
+                'Hotfix Upgrade',
+                'Other'
             ]
 
             with ui.grid(columns=2).classes('w-full gap-3'):
@@ -73,11 +74,31 @@ with ui.row().classes('w-full p-6 gap-6'):
                 cust_loc = ui.input('Customer Site / Location *', value='').classes('w-full')
                 sr_num = ui.input('Upgrade SR *', value='').classes('w-full')
                 serial_num = ui.input('Serial Number *', value='').classes('w-full')
-                sys_model = ui.select(['NA', 'Model 4x', 'Model 5x', 'Model 8x'], label='IDPA Model *', value='NA').classes('w-full')
-                curr_code = ui.select(code_selection_options, label='Current Code *', value='NA').classes('w-full')
-                req_code = ui.select(code_selection_options, label='Code Requested *', value='NA').classes('w-full')
-                rec_code = ui.select(code_selection_options, label='Code Recommended *', value='NA').classes('w-full')
-                conf_code = ui.select(code_selection_options, label='Code Confirmed *', value='NA').classes('w-full')
+                
+                with ui.column().classes('w-full gap-1'):
+                    sys_model = ui.select(['NA', 'Model 4x', 'Model 5x', 'Model 8x', 'Other'], label='IDPA Model *', value='NA').classes('w-full')
+                    sys_model_other = ui.input('Specify IDPA Model Details', value='').classes('w-full text-xs')
+                    sys_model_other.bind_visibility_from(sys_model, 'value', backward=lambda v: str(v) == 'Other')
+
+                with ui.column().classes('w-full gap-1'):
+                    curr_code = ui.select(code_selection_options, label='Current Code *', value='NA').classes('w-full')
+                    curr_code_other = ui.input('Specify Current Code Details', value='').classes('w-full text-xs')
+                    curr_code_other.bind_visibility_from(curr_code, 'value', backward=lambda v: str(v) == 'Other')
+
+                with ui.column().classes('w-full gap-1'):
+                    req_code = ui.select(code_selection_options, label='Code Requested *', value='NA').classes('w-full')
+                    req_code_other = ui.input('Specify Code Requested Details', value='').classes('w-full text-xs')
+                    req_code_other.bind_visibility_from(req_code, 'value', backward=lambda v: str(v) == 'Other')
+
+                with ui.column().classes('w-full gap-1'):
+                    rec_code = ui.select(code_selection_options, label='Code Recommended *', value='NA').classes('w-full')
+                    rec_code_other = ui.input('Specify Code Recommended Details', value='').classes('w-full text-xs')
+                    rec_code_other.bind_visibility_from(rec_code, 'value', backward=lambda v: str(v) == 'Other')
+
+                with ui.column().classes('w-full gap-1'):
+                    conf_code = ui.select(code_selection_options, label='Code Confirmed *', value='NA').classes('w-full')
+                    conf_code_other = ui.input('Specify Code Confirmed Details', value='').classes('w-full text-xs')
+                    conf_code_other.bind_visibility_from(conf_code, 'value', backward=lambda v: str(v) == 'Other')
             
             upg_notes = ui.input('Upgrade Request Notes', value='').classes('w-full mt-2')
 
@@ -86,72 +107,106 @@ with ui.row().classes('w-full p-6 gap-6'):
             ui.label('2. System Health Checks').classes('text-md font-bold text-teal-900 mb-2')
             with ui.grid(columns=2).classes('w-full gap-3'):
                 with ui.column().classes('w-full gap-1'):
-                    acm_dashboard = ui.select(['NA', 'Good', 'Issues found - remediated', 'Issues found - outstanding'], label='ACM Dashboard Status *', value='NA').classes('w-full')
-                    acm_details = ui.input('ACM Issue Details', value='').classes('w-full text-xs')
-                    acm_details.bind_visibility_from(acm_dashboard, 'value', backward=lambda v: 'Issues' in str(v))
+                    acm_dashboard = ui.select(['NA', 'Good', 'Issues found - remediated', 'Issues found - outstanding', 'Other'], label='ACM Dashboard Status *', value='NA').classes('w-full')
+                    acm_details = ui.input('ACM Issue / Other Details', value='').classes('w-full text-xs')
+                    acm_details.bind_visibility_from(acm_dashboard, 'value', backward=lambda v: 'Issues' in str(v) or str(v) == 'Other')
 
                 with ui.column().classes('w-full gap-1'):
-                    ruck_status = ui.select(['NA', 'Good', 'Issues remediated', 'Issues pending'], label='RUCK Status *', value='NA').classes('w-full')
-                    ruck_details = ui.input('RUCK Issue Details', value='').classes('w-full text-xs')
-                    ruck_details.bind_visibility_from(ruck_status, 'value', backward=lambda v: 'Issues' in str(v))
+                    ruck_status = ui.select(['NA', 'Good', 'Issues remediated', 'Issues pending', 'Other'], label='RUCK Status *', value='NA').classes('w-full')
+                    ruck_details = ui.input('RUCK Issue / Other Details', value='').classes('w-full text-xs')
+                    ruck_details.bind_visibility_from(ruck_status, 'value', backward=lambda v: 'Issues' in str(v) or str(v) == 'Other')
 
-                pdf_status = ui.select([
-                    'NA',
-                    'Good — downloaded and attached to SR (Prefixed with Tech Consult)',
-                    'Issue — PDF download fails; all other health checks pass; retest post-upgrade and raise support ticket if needed'
-                ], label='PDF Status *', value='NA').classes('w-full')
+                with ui.column().classes('w-full gap-1'):
+                    pdf_status = ui.select([
+                        'NA',
+                        'Good — downloaded and attached to SR (Prefixed with Tech Consult)',
+                        'Issue — PDF download fails; all other health checks pass; retest post-upgrade and raise support ticket if needed',
+                        'Other'
+                    ], label='PDF Status *', value='NA').classes('w-full')
+                    pdf_other = ui.input('Specify PDF Status Details', value='').classes('w-full text-xs')
+                    pdf_other.bind_visibility_from(pdf_status, 'value', backward=lambda v: str(v) == 'Other')
                 
-                acm_snapshot = ui.select([
-                    'NA',
-                    'No VM Snapshot discovered',
-                    'VM Snapshot discovered — customer confirmed removal before upgrade using KB 000218806',
-                    'Removal pending'
-                ], label='ACM VM Snapshot *', value='NA').classes('w-full')
+                with ui.column().classes('w-full gap-1'):
+                    acm_snapshot = ui.select([
+                        'NA',
+                        'No VM Snapshot discovered',
+                        'VM Snapshot discovered — customer confirmed removal before upgrade using KB 000218806',
+                        'Removal pending',
+                        'Other'
+                    ], label='ACM VM Snapshot *', value='NA').classes('w-full')
+                    acm_snap_other = ui.input('Specify ACM Snapshot Details', value='').classes('w-full text-xs')
+                    acm_snap_other.bind_visibility_from(acm_snapshot, 'value', backward=lambda v: str(v) == 'Other')
                 
-                validation_status = ui.select([
-                    'NA',
-                    'Code Downloaded and Validation Passed',
-                    'Downloaded but validation not run',
-                    'Downloaded and validation failed',
-                    'Code not downloaded'
-                ], label='Validation Status *', value='NA').classes('w-full')
+                with ui.column().classes('w-full gap-1'):
+                    validation_status = ui.select([
+                        'NA',
+                        'Code Downloaded and Validation Passed',
+                        'Downloaded but validation not run',
+                        'Downloaded and validation failed',
+                        'Code not downloaded',
+                        'Other'
+                    ], label='Validation Status *', value='NA').classes('w-full')
+                    val_stat_other = ui.input('Specify Validation Status Details', value='').classes('w-full text-xs')
+                    val_stat_other.bind_visibility_from(validation_status, 'value', backward=lambda v: str(v) == 'Other')
                 
-                idrac_status = ui.select(['NA', 'Configured and Accessible', 'Configured but Not Accessible', 'Not Configured'], label='iDRAC Status *', value='NA').classes('w-full')
-                exceptional_tasks = ui.select(['NA', 'No Action Required', 'Review RCM Activity Notes', 'Action Required'], label='Exceptional Tasks *', value='NA').classes('w-full')
+                with ui.column().classes('w-full gap-1'):
+                    idrac_status = ui.select(['NA', 'Configured and Accessible', 'Configured but Not Accessible', 'Not Configured', 'Other'], label='iDRAC Status *', value='NA').classes('w-full')
+                    idrac_other = ui.input('Specify iDRAC Status Details', value='').classes('w-full text-xs')
+                    idrac_other.bind_visibility_from(idrac_status, 'value', backward=lambda v: str(v) == 'Other')
+
+                with ui.column().classes('w-full gap-1'):
+                    exceptional_tasks = ui.select(['NA', 'No Action Required', 'Review RCM Activity Notes', 'Action Required', 'Other'], label='Exceptional Tasks *', value='NA').classes('w-full')
+                    exc_other = ui.input('Specify Exceptional Tasks Details', value='').classes('w-full text-xs')
+                    exc_other.bind_visibility_from(exceptional_tasks, 'value', backward=lambda v: str(v) == 'Other')
                 
                 with ui.column().classes('w-full gap-1 col-span-2'):
                     health_status = ui.select([
                         'NA',
                         'IDPA is healthy and ready for upgrade — No issues found. Proceed as scheduled.',
                         'IDPA is healthy and ready for upgrade — Issues found were remediated or are not upgrade-related. Proceed as scheduled.',
-                        'IDPA is not healthy for upgrade — Issues identified with associated remediation plan.'
+                        'IDPA is not healthy for upgrade — Issues identified with associated remediation plan.',
+                        'Other'
                     ], label='Overall Upgrade Health Status *', value='NA').classes('w-full')
-                    health_issue_details = ui.input('Health Issue / Remediation Plan Details', value='').classes('w-full text-xs')
-                    health_issue_details.bind_visibility_from(health_status, 'value', backward=lambda v: 'not healthy' in str(v))
+                    health_issue_details = ui.input('Health Issue / Remediation Plan / Other Details', value='').classes('w-full text-xs')
+                    health_issue_details.bind_visibility_from(health_status, 'value', backward=lambda v: 'not healthy' in str(v) or str(v) == 'Other')
 
         # SECTION 3: UPGRADE PREPARATION INPUTS
         with ui.card().classes('w-full p-5 border-l-4 border-indigo-600 shadow-sm'):
             ui.label('3. Upgrade Preparation Inputs').classes('text-md font-bold text-indigo-900 mb-2')
             with ui.grid(columns=3).classes('w-full gap-3'):
-                upg_review = ui.select([
-                    'NA',
-                    'Customer has already reviewed the UPG, and did not have any further questions',
-                    'Customer has already reviewed the UPG, and I have addressed the follow-up questions',
-                    'Customer has not reviewed the UPG'
-                ], label='UPG Review *', value='NA').classes('w-full')
-                prereqs_status = ui.select([
-                    'NA',
-                    'Customer meets upgrade requirements and acknowledged prerequisites',
-                    'Customer does not meet requirements/prerequisites',
-                    'Requirements review pending'
-                ], label='Prerequisites Status *', value='NA').classes('w-full')
-                download_status = ui.select([
-                    'NA',
-                    'Code downloaded and ready',
-                    'Customer will follow instructions in pre-check report email',
-                    'Already downloaded; customer will upload prior to upgrade',
-                    'Code not downloaded'
-                ], label='Code Download Status *', value='NA').classes('w-full')
+                with ui.column().classes('w-full gap-1'):
+                    upg_review = ui.select([
+                        'NA',
+                        'Customer has already reviewed the UPG, and did not have any further questions',
+                        'Customer has already reviewed the UPG, and I have addressed the follow-up questions',
+                        'Customer has not reviewed the UPG',
+                        'Other'
+                    ], label='UPG Review *', value='NA').classes('w-full')
+                    upg_rev_other = ui.input('Specify UPG Review Details', value='').classes('w-full text-xs')
+                    upg_rev_other.bind_visibility_from(upg_review, 'value', backward=lambda v: str(v) == 'Other')
+
+                with ui.column().classes('w-full gap-1'):
+                    prereqs_status = ui.select([
+                        'NA',
+                        'Customer meets upgrade requirements and acknowledged prerequisites',
+                        'Customer does not meet requirements/prerequisites',
+                        'Requirements review pending',
+                        'Other'
+                    ], label='Prerequisites Status *', value='NA').classes('w-full')
+                    prereq_other = ui.input('Specify Prerequisites Details', value='').classes('w-full text-xs')
+                    prereq_other.bind_visibility_from(prereqs_status, 'value', backward=lambda v: str(v) == 'Other')
+
+                with ui.column().classes('w-full gap-1'):
+                    download_status = ui.select([
+                        'NA',
+                        'Code downloaded and ready',
+                        'Customer will follow instructions in pre-check report email',
+                        'Already downloaded; customer will upload prior to upgrade',
+                        'Code not downloaded',
+                        'Other'
+                    ], label='Code Download Status *', value='NA').classes('w-full')
+                    dl_stat_other = ui.input('Specify Download Status Details', value='').classes('w-full text-xs')
+                    dl_stat_other.bind_visibility_from(download_status, 'value', backward=lambda v: str(v) == 'Other')
 
         # SECTION 4: RCM SCHEDULE & ACTIVITIES
         with ui.card().classes('w-full p-5 border-l-4 border-amber-600 shadow-sm'):
@@ -170,28 +225,38 @@ with ui.row().classes('w-full p-6 gap-6'):
                         with ui.grid(columns=3).classes('w-full gap-2 items-center'):
                             inp_rcm = ui.input('RCM Activity ID', value=rcm).classes('w-full text-xs')
                             
-                            inp_name = ui.select([
-                                'NA',
-                                'IDPA OE Code Upgrade',
-                                'DDOS Upgrade',
-                                'Hotfix Upgrade',
-                                'Other'
-                            ], label='Base Activity *', value=name).classes('w-full text-xs')
+                            with ui.column().classes('w-full gap-1'):
+                                inp_name = ui.select([
+                                    'NA',
+                                    'IDPA OE Code Upgrade',
+                                    'DDOS Upgrade',
+                                    'Hotfix Upgrade',
+                                    'Other'
+                                ], label='Base Activity *', value=name).classes('w-full text-xs')
+                                inp_name_other = ui.input('Specify Base Activity', value='').classes('w-full text-xs')
+                                inp_name_other.bind_visibility_from(inp_name, 'value', backward=lambda v: str(v) == 'Other')
 
                             inp_sched_status = ui.select(['To be Scheduled', 'Scheduled'], label='Schedule Status *', value=schedule_status).classes('w-full text-xs')
                             
-                            inp_from = ui.select(['NA', '2.6.0', '2.7.2', '2.7.7', '2.7.9'], label='Upgrading From', value=from_v).classes('w-full text-xs')
-                            
-                            def get_dynamic_to_options():
-                                curr = curr_code.value
-                                if curr in UPGRADE_PATHS:
-                                    return ['NA'] + UPGRADE_PATHS[curr]
-                                return ['NA', '2.7.2', '2.7.7', '2.7.9', 'DDOS Upgrade', 'Hotfix Upgrade']
+                            with ui.column().classes('w-full gap-1'):
+                                inp_from = ui.select(['NA', '2.6.0', '2.7.2', '2.7.7', '2.7.9', 'Other'], label='Upgrading From', value=from_v).classes('w-full text-xs')
+                                inp_from_other = ui.input('Specify Upgrading From', value='').classes('w-full text-xs')
+                                inp_from_other.bind_visibility_from(inp_from, 'value', backward=lambda v: str(v) == 'Other')
 
-                            inp_to = ui.select(get_dynamic_to_options(), label='Upgrading To', value=to_v).classes('w-full text-xs')
-                            
-                            # Update target options dynamically when Current Code changes
-                            curr_code.on('update:value', lambda e: inp_to.set_options(['NA'] + UPGRADE_PATHS.get(e.value, ['2.7.2', '2.7.7', '2.7.9', 'DDOS Upgrade', 'Hotfix Upgrade'])))
+                            # Dynamic Upgrading To options filtering out selected "Upgrading From" version
+                            def get_filtered_to_options(selected_from):
+                                curr = curr_code.value if curr_code.value != 'NA' else selected_from
+                                allowed = UPGRADE_PATHS.get(curr, ['2.7.2', '2.7.7', '2.7.9', 'DDOS Upgrade', 'Hotfix Upgrade'])
+                                filtered = [opt for opt in allowed if opt != selected_from]
+                                return ['NA'] + filtered + ['Other']
+
+                            with ui.column().classes('w-full gap-1'):
+                                inp_to = ui.select(get_filtered_to_options(from_v), label='Upgrading To', value=to_v).classes('w-full text-xs')
+                                inp_to_other = ui.input('Specify Upgrading To', value='').classes('w-full text-xs')
+                                inp_to_other.bind_visibility_from(inp_to, 'value', backward=lambda v: str(v) == 'Other')
+
+                            inp_from.on('update:value', lambda e: inp_to.set_options(get_filtered_to_options(e.value)))
+                            curr_code.on('update:value', lambda e: inp_to.set_options(get_filtered_to_options(inp_from.value)))
 
                             duration_options = [round(x * 0.5, 1) for x in range(1, 25)]
                             inp_duration = ui.select(duration_options, label='Duration (Hours - Override)', value=duration_val).classes('w-full text-xs')
@@ -228,10 +293,11 @@ with ui.row().classes('w-full p-6 gap-6'):
 
                         card_data = {
                             'card_widget': card,
-                            'rcm': inp_rcm, 'name': inp_name,
+                            'rcm': inp_rcm, 'name': inp_name, 'name_other': inp_name_other,
                             'schedule_status': inp_sched_status,
                             'date': inp_date, 'time': inp_time,
-                            'from': inp_from, 'to': inp_to,
+                            'from': inp_from, 'from_other': inp_from_other,
+                            'to': inp_to, 'to_other': inp_to_other,
                             'duration': inp_duration,
                             'ndmp_count': inp_ndmp_count, 'ndmp_details': inp_ndmp_details,
                             'add_acts': inp_add_acts, 'add_act_details': inp_add_act_details,
@@ -248,13 +314,17 @@ with ui.row().classes('w-full p-6 gap-6'):
         # SECTION 5: SCHEDULING ACTIONS
         with ui.card().classes('w-full p-5 border-l-4 border-purple-600 shadow-sm'):
             ui.label('5. Scheduling Actions').classes('text-md font-bold text-purple-900 mb-2')
-            scheduling_action = ui.select([
-                'NA',
-                'No issues; no further scheduling required - Reserved slot converted',
-                'Requires rescheduling Tech Consult after issues are resolved - Reserved slot not converted',
-                'Issues found but not upgrade-blocking - Reserved slot converted',
-                'Upgrade-blocking issues found; must be resolved before upgrade - Reserved slot converted'
-            ], label='Action Taken *', value='NA').classes('w-full')
+            with ui.column().classes('w-full gap-1'):
+                scheduling_action = ui.select([
+                    'NA',
+                    'No issues; no further scheduling required - Reserved slot converted',
+                    'Requires rescheduling Tech Consult after issues are resolved - Reserved slot not converted',
+                    'Issues found but not upgrade-blocking - Reserved slot converted',
+                    'Upgrade-blocking issues found; must be resolved before upgrade - Reserved slot converted',
+                    'Other'
+                ], label='Action Taken *', value='NA').classes('w-full')
+                sched_act_other = ui.input('Specify Action Taken Details', value='').classes('w-full text-xs')
+                sched_act_other.bind_visibility_from(scheduling_action, 'value', backward=lambda v: str(v) == 'Other')
 
         ui.button('⚡ Generate Deliverables', on_click=lambda: process_tc_generation()).classes('w-full bg-blue-700 text-white font-bold p-3 text-base shadow-md')
 
@@ -316,8 +386,8 @@ def calculate_activity_duration(model_str, base_name, ndmp_cnt, add_acts, manual
 
 
 def compute_combined_activity_name(base_name, ndmp_cnt, add_acts):
-    if base_name in ['NA', 'DDOS Upgrade', 'Hotfix Upgrade', 'Other']:
-        return base_name if base_name != 'Other' else 'IDPA OE Code Upgrade'
+    if base_name in ['NA', 'DDOS Upgrade', 'Hotfix Upgrade']:
+        return base_name
     
     has_ave = 'AVE /space expansion' in add_acts
     has_ndmp = ndmp_cnt != 'No' or 'NDMP Upgrade' in add_acts
@@ -327,7 +397,7 @@ def compute_combined_activity_name(base_name, ndmp_cnt, add_acts):
     parts = []
     if has_ave:
         parts.append("AVE /space")
-    parts.append("IDPA OE Code Upgrade")
+    parts.append("IDPA OE Code Upgrade" if base_name != 'Other' else "Custom Activity")
 
     suffixes = []
     if has_ndmp:
@@ -345,9 +415,15 @@ def compute_combined_activity_name(base_name, ndmp_cnt, add_acts):
 
 # --- PROCESSING & FILE DOWNLOAD LOGIC ---
 def process_tc_generation():
-    curr = curr_code.value
-    conf = conf_code.value
-    upgrade_path_str = f"{curr} → {conf}" if curr != 'NA' and conf != 'NA' else 'NA'
+    get_val = lambda sel, oth: oth.value if sel.value == 'Other' and oth.value else sel.value
+
+    model_val = get_val(sys_model, sys_model_other)
+    curr_val = get_val(curr_code, curr_code_other)
+    req_val = get_val(req_code, req_code_other)
+    rec_val = get_val(rec_code, rec_code_other)
+    conf_val = get_val(conf_code, conf_code_other)
+
+    upgrade_path_str = f"{curr_val} → {conf_val}" if curr_val != 'NA' and conf_val != 'NA' else 'NA'
 
     required_packages = []
     internal_act_lines = []
@@ -356,8 +432,8 @@ def process_tc_generation():
     last_scheduled_dt = None
 
     for idx, row in enumerate(activity_rows, 1):
-        act_from = row['from'].value
-        act_to = row['to'].value
+        act_from = get_val(row['from'], row['from_other'])
+        act_to = get_val(row['to'], row['to_other'])
         sched_status = row['schedule_status'].value
         
         date_part = row['date'].value if row['date'].value else ""
@@ -389,16 +465,16 @@ def process_tc_generation():
             act_rcm = "TBD"
             act_date = "TBD"
 
-        base_name = row['name'].value
+        base_name_raw = get_val(row['name'], row['name_other'])
         ndmp_cnt = row['ndmp_count'].value
         add_acts_list = row['add_acts'].value if isinstance(row['add_acts'].value, list) else []
         manual_duration = row['duration'].value
         multi_step_flag = row['multi_step'].value
 
-        act_name = compute_combined_activity_name(base_name, ndmp_cnt, add_acts_list)
+        act_name = compute_combined_activity_name(base_name_raw, ndmp_cnt, add_acts_list)
         
         raw_hrs, cust_buffered_hrs, internal_planned_hrs = calculate_activity_duration(
-            sys_model.value, base_name, ndmp_cnt, add_acts_list, manual_duration
+            model_val, base_name_raw, ndmp_cnt, add_acts_list, manual_duration
         )
 
         internal_act_lines.append(
@@ -443,10 +519,10 @@ def process_tc_generation():
             seen_ids.add(pkg["id"])
             unique_packages.append(pkg)
 
-    acm_val_str = f"{acm_dashboard.value}" + (f" (Details: {acm_details.value})" if acm_details.value and 'Issues' in acm_dashboard.value else "")
-    ruck_val_str = f"{ruck_status.value}" + (f" (Details: {ruck_details.value})" if ruck_details.value and 'Issues' in ruck_status.value else "")
+    acm_val_str = f"{get_val(acm_dashboard, acm_details)}" + (f" (Details: {acm_details.value})" if acm_details.value and 'Issues' in acm_dashboard.value else "")
+    ruck_val_str = f"{get_val(ruck_status, ruck_details)}" + (f" (Details: {ruck_details.value})" if ruck_details.value and 'Issues' in ruck_status.value else "")
     
-    health_val_str = f"{health_status.value}" + (f" (Remediation Plan Details: {health_issue_details.value})" if health_issue_details.value and 'not healthy' in health_status.value else "")
+    health_val_str = f"{get_val(health_status, health_issue_details)}" + (f" (Details: {health_issue_details.value})" if health_issue_details.value and ('not healthy' in health_status.value or health_status.value == 'Other') else "")
 
     sr_template = f"""*** POWERPROTECT DP TECHNICAL CONSULTATION (TC) SUMMARY ***
 
@@ -455,27 +531,27 @@ Customer Name: {cust_name.value}
 Customer Site / Location: {cust_loc.value}
 Upgrade SR: {sr_num.value}
 PowerProtect DP Serial Number: {serial_num.value}
-IDPA Model: {sys_model.value}
-Current Code: {curr_code.value}
-Code Requested: {req_code.value}
-Code Recommended: {rec_code.value}
-Code Confirmed: {conf_code.value}
+IDPA Model: {model_val}
+Current Code: {curr_val}
+Code Requested: {req_val}
+Code Recommended: {rec_val}
+Code Confirmed: {conf_val}
 Upgrade Request Notes: {upg_notes.value}
 
 2. SYSTEM HEALTH & PREPARATION
 ACM Dashboard Status: {acm_val_str}
-PDF Status: {pdf_status.value}
+PDF Status: {get_val(pdf_status, pdf_other)}
 RUCK Status: {ruck_val_str}
-ACM VM Snapshot: {acm_snapshot.value}
-Validation Status: {validation_status.value}
-iDRAC Status: {idrac_status.value}
-Exceptional Tasks: {exceptional_tasks.value}
+ACM VM Snapshot: {get_val(acm_snapshot, acm_snap_other)}
+Validation Status: {get_val(validation_status, val_stat_other)}
+iDRAC Status: {get_val(idrac_status, idrac_other)}
+Exceptional Tasks: {get_val(exceptional_tasks, exc_other)}
 Upgrade Health Status: {health_val_str}
 
 3. UPGRADE PREPARATION STATUS
-UPG Review: {upg_review.value}
-Prerequisites: {prereqs_status.value}
-Code Stage: {download_status.value}
+UPG Review: {get_val(upg_review, upg_rev_other)}
+Prerequisites: {get_val(prereqs_status, prereq_other)}
+Code Stage: {get_val(download_status, dl_stat_other)}
 
 4. UPGRADE PATH & SCHEDULE
 Upgrade Path: {upgrade_path_str}
@@ -484,7 +560,7 @@ RCM SCHEDULE & ACTIVITIES:
 """ + "\n".join(internal_act_lines) + f"""
 
 5. SCHEDULING ACTION
-Action Taken: {scheduling_action.value}"""
+Action Taken: {get_val(scheduling_action, sched_act_other)}"""
 
     if unique_packages:
         col_type = max(len(p['type']) for p in unique_packages)
@@ -542,13 +618,12 @@ Customer Name              : {cust_name.value}
 Customer Site / Location   : {cust_loc.value}
 Upgrade SR                 : {sr_num.value}
 PowerProtect DP Serial No. : {serial_num.value}
-IDPA Model                 : {sys_model.value}
-Current Code               : {curr_code.value}
-Code Confirmed             : {conf_code.value}
+IDPA Model                 : {model_val}
+Current Code               : {curr_val}
+Code Confirmed             : {conf_val}
 
 OVERALL HEALTH STATUS
-  • {health_status.value}
-{f"  • Remediation Details: {health_issue_details.value}" if health_issue_details.value and 'not healthy' in health_status.value else ""}
+  • {get_val(health_status, health_issue_details)}
 
 UPGRADE PATH
   • {upgrade_path_str}
