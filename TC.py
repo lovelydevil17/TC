@@ -258,6 +258,24 @@ with ui.row().classes('w-full p-6 gap-6'):
                             ui.label('Activity Step Input').classes('font-bold text-xs text-gray-700')
                             ui.button(icon='delete', color='negative', on_click=lambda: remove_activity_card(card_data)).props('flat round dense')
                         
+                        duration_options = [0.0] + [round(x * 0.5, 1) for x in range(1, 25)]
+                        
+                        init_model = sys_model.value if sys_model.value != 'Other' and sys_model.value != 'NA' else 'NA'
+                        init_auto_hrs = compute_raw_duration(init_model, name, ndmp_count, add_acts)
+                        initial_duration = duration_val if duration_val is not None else init_auto_hrs
+
+                        inp_duration = ui.select(duration_options, label='Duration (Hours - Auto/Override)', value=initial_duration).classes('w-full text-xs')
+
+                        def update_auto_duration():
+                            m_val = sys_model.value if sys_model.value != 'Other' and sys_model.value != 'NA' else 'NA'
+                            b_val = inp_name.value
+                            n_val = inp_ndmp_count.value
+                            a_val = inp_add_acts.value if isinstance(inp_add_acts.value, list) else []
+                            
+                            auto_calc = compute_raw_duration(m_val, b_val, n_val, a_val)
+                            if auto_calc in duration_options:
+                                inp_duration.value = auto_calc
+
                         with ui.grid(columns=3).classes('w-full gap-2 items-center'):
                             inp_rcm = ui.input('RCM Activity ID', value=rcm).classes('w-full text-xs')
                             
@@ -268,7 +286,7 @@ with ui.row().classes('w-full p-6 gap-6'):
                                     'DDOS Upgrade',
                                     'Hotfix Upgrade',
                                     'Other'
-                                ], label='Base Activity *', value=name).classes('w-full text-xs')
+                                ], label='Base Activity *', value=name, on_change=lambda _: update_auto_duration()).classes('w-full text-xs')
                                 inp_name_other = ui.input('Specify Base Activity', value='').classes('w-full text-xs')
                                 inp_name_other.bind_visibility_from(inp_name, 'value', backward=lambda v: str(v) == 'Other')
 
@@ -290,27 +308,8 @@ with ui.row().classes('w-full p-6 gap-6'):
                                 inp_to_other = ui.input('Specify Upgrading To', value='').classes('w-full text-xs')
                                 inp_to_other.bind_visibility_from(inp_to, 'value', backward=lambda v: str(v) == 'Other')
 
-                            duration_options = [0.0] + [round(x * 0.5, 1) for x in range(1, 25)]
-                            
-                            init_model = sys_model.value if sys_model.value != 'Other' and sys_model.value != 'NA' else 'NA'
-                            init_auto_hrs = compute_raw_duration(init_model, name, ndmp_count, add_acts)
-                            initial_duration = duration_val if duration_val is not None else init_auto_hrs
-
-                            inp_duration = ui.select(duration_options, label='Duration (Hours - Auto/Override)', value=initial_duration).classes('w-full text-xs')
-
-                            def update_auto_duration():
-                                m_val = sys_model.value if sys_model.value != 'Other' and sys_model.value != 'NA' else 'NA'
-                                b_val = inp_name.value
-                                n_val = inp_ndmp_count.value
-                                a_val = inp_add_acts.value if isinstance(inp_add_acts.value, list) else []
-                                
-                                auto_calc = compute_raw_duration(m_val, b_val, n_val, a_val)
-                                if auto_calc in duration_options:
-                                    inp_duration.value = auto_calc
-
-                            # Reactivity bindings using .on('value-change', ...)
-                            inp_name.on('value-change', lambda _: update_auto_duration())
-                            sys_model.on('value-change', lambda _: update_auto_duration())
+                            # Link global model change to update duration
+                            sys_model.on_value_change(lambda _: update_auto_duration())
 
                             def on_from_change(e):
                                 new_from = e.value
@@ -318,8 +317,8 @@ with ui.row().classes('w-full p-6 gap-6'):
                                 if new_from in AUTO_NEXT_VERSION:
                                     inp_to.value = AUTO_NEXT_VERSION[new_from]
 
-                            inp_from.on('value-change', on_from_change)
-                            curr_code.on('value-change', lambda e: inp_to.set_options(get_filtered_to_options(inp_from.value)))
+                            inp_from.on_value_change(on_from_change)
+                            curr_code.on_value_change(lambda e: inp_to.set_options(get_filtered_to_options(inp_from.value)))
 
                             with ui.input('Scheduled Date', value=date_val).classes('w-full text-xs') as inp_date:
                                 with inp_date.add_slot('append'):
@@ -331,8 +330,7 @@ with ui.row().classes('w-full p-6 gap-6'):
                             inp_time = ui.select(time_options, label='Time (24h)', value=time_val).classes('w-full text-xs')
 
                         with ui.row().classes('w-full gap-2 mt-2 items-center'):
-                            inp_ndmp_count = ui.select(['No', 'Yes—1', 'Yes—2', 'Yes—3', 'Yes—4', 'Yes—Other'], label='NDMP Upgrade / Count', value=ndmp_count).classes('w-1/2 text-xs')
-                            inp_ndmp_count.on('value-change', lambda _: update_auto_duration())
+                            inp_ndmp_count = ui.select(['No', 'Yes—1', 'Yes—2', 'Yes—3', 'Yes—4', 'Yes—Other'], label='NDMP Upgrade / Count', value=ndmp_count, on_change=lambda _: update_auto_duration()).classes('w-1/2 text-xs')
 
                             inp_ndmp_details = ui.input('NDMP Count Details', value=ndmp_details).classes('w-1/2 text-xs')
                             inp_ndmp_details.bind_visibility_from(inp_ndmp_count, 'value', backward=lambda v: v == 'Yes—Other')
@@ -345,8 +343,7 @@ with ui.row().classes('w-full p-6 gap-6'):
                                 'DDOS Upgrade', 
                                 'Hotfix Upgrade',
                                 'Other'
-                            ], multiple=True, label='Additional Activities', value=add_acts).classes('w-1/2 text-xs')
-                            inp_add_acts.on('value-change', lambda _: update_auto_duration())
+                            ], multiple=True, label='Additional Activities', value=add_acts, on_change=lambda _: update_auto_duration()).classes('w-1/2 text-xs')
                             
                             inp_add_act_details = ui.input('Additional Activity Details', value=add_act_details).classes('w-1/2 text-xs')
                             inp_add_act_details.bind_visibility_from(inp_add_acts, 'value', backward=lambda v: isinstance(v, list) and 'Other' in v)
