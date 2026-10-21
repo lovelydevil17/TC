@@ -12,11 +12,10 @@ MODEL_BASE_DURATIONS = {
 }
 
 UPGRADE_PATHS = {
-    "2.6.0-2.7.2": ["2.7.2"],
-    "2.6.0-2.7.7": ["2.7.2", "2.7.7"],
-    "2.6.0-2.7.9": ["2.7.2", "2.7.7", "2.7.9"],
-    "2.7.2-2.7.7": ["2.7.7"],
-    "2.7.7-2.7.9": ["2.7.9"]
+    "2.6.0": ["2.7.2", "2.7.7", "2.7.9"],
+    "2.7.2": ["2.7.7", "2.7.9"],
+    "2.7.7": ["2.7.9"],
+    "2.7.9": ["DDOS Upgrade", "Hotfix Upgrade"]
 }
 
 PACKAGE_DATABASE = [
@@ -58,16 +57,27 @@ with ui.row().classes('w-full p-6 gap-6'):
         # SECTION 1: CUSTOMER & SYSTEM DETAILS
         with ui.card().classes('w-full p-5 border-l-4 border-blue-600 shadow-sm'):
             ui.label('1. Customer & System Details').classes('text-md font-bold text-blue-900 mb-2')
+            
+            code_selection_options = [
+                'NA', 
+                '2.6.0', 
+                '2.7.2', 
+                '2.7.7', 
+                '2.7.9', 
+                'DDOS Upgrade', 
+                'Hotfix Upgrade'
+            ]
+
             with ui.grid(columns=2).classes('w-full gap-3'):
                 cust_name = ui.input('Customer Name *', value='').classes('w-full')
                 cust_loc = ui.input('Customer Site / Location *', value='').classes('w-full')
                 sr_num = ui.input('Upgrade SR *', value='').classes('w-full')
                 serial_num = ui.input('Serial Number *', value='').classes('w-full')
                 sys_model = ui.select(['NA', 'Model 4x', 'Model 5x', 'Model 8x'], label='IDPA Model *', value='NA').classes('w-full')
-                curr_code = ui.select(['NA', '2.6.0', '2.7.2', '2.7.7', '2.7.9'], label='Current Code *', value='NA').classes('w-full')
-                req_code = ui.select(['NA', '2.6.0', '2.7.2', '2.7.7', '2.7.9'], label='Code Requested *', value='NA').classes('w-full')
-                rec_code = ui.select(['NA', '2.6.0', '2.7.2', '2.7.7', '2.7.9'], label='Code Recommended *', value='NA').classes('w-full')
-                conf_code = ui.select(['NA', '2.6.0', '2.7.2', '2.7.7', '2.7.9'], label='Code Confirmed *', value='NA').classes('w-full')
+                curr_code = ui.select(code_selection_options, label='Current Code *', value='NA').classes('w-full')
+                req_code = ui.select(code_selection_options, label='Code Requested *', value='NA').classes('w-full')
+                rec_code = ui.select(code_selection_options, label='Code Recommended *', value='NA').classes('w-full')
+                conf_code = ui.select(code_selection_options, label='Code Confirmed *', value='NA').classes('w-full')
             
             upg_notes = ui.input('Upgrade Request Notes', value='').classes('w-full mt-2')
 
@@ -109,7 +119,6 @@ with ui.row().classes('w-full p-6 gap-6'):
                 idrac_status = ui.select(['NA', 'Configured and Accessible', 'Configured but Not Accessible', 'Not Configured'], label='iDRAC Status *', value='NA').classes('w-full')
                 exceptional_tasks = ui.select(['NA', 'No Action Required', 'Review RCM Activity Notes', 'Action Required'], label='Exceptional Tasks *', value='NA').classes('w-full')
                 
-                # Overall Upgrade Health Status + Conditional Unhealthy Details Input
                 with ui.column().classes('w-full gap-1 col-span-2'):
                     health_status = ui.select([
                         'NA',
@@ -172,7 +181,17 @@ with ui.row().classes('w-full p-6 gap-6'):
                             inp_sched_status = ui.select(['To be Scheduled', 'Scheduled'], label='Schedule Status *', value=schedule_status).classes('w-full text-xs')
                             
                             inp_from = ui.select(['NA', '2.6.0', '2.7.2', '2.7.7', '2.7.9'], label='Upgrading From', value=from_v).classes('w-full text-xs')
-                            inp_to = ui.select(['NA', '2.6.0', '2.7.2', '2.7.7', '2.7.9'], label='Upgrading To', value=to_v).classes('w-full text-xs')
+                            
+                            def get_dynamic_to_options():
+                                curr = curr_code.value
+                                if curr in UPGRADE_PATHS:
+                                    return ['NA'] + UPGRADE_PATHS[curr]
+                                return ['NA', '2.7.2', '2.7.7', '2.7.9', 'DDOS Upgrade', 'Hotfix Upgrade']
+
+                            inp_to = ui.select(get_dynamic_to_options(), label='Upgrading To', value=to_v).classes('w-full text-xs')
+                            
+                            # Update target options dynamically when Current Code changes
+                            curr_code.on('update:value', lambda e: inp_to.set_options(['NA'] + UPGRADE_PATHS.get(e.value, ['2.7.2', '2.7.7', '2.7.9', 'DDOS Upgrade', 'Hotfix Upgrade'])))
 
                             duration_options = [round(x * 0.5, 1) for x in range(1, 25)]
                             inp_duration = ui.select(duration_options, label='Duration (Hours - Override)', value=duration_val).classes('w-full text-xs')
@@ -326,9 +345,9 @@ def compute_combined_activity_name(base_name, ndmp_cnt, add_acts):
 
 # --- PROCESSING & FILE DOWNLOAD LOGIC ---
 def process_tc_generation():
-    path_key = f"{curr_code.value}-{conf_code.value}"
-    target_steps = UPGRADE_PATHS.get(path_key, [conf_code.value] if conf_code.value != 'NA' else [])
-    upgrade_path_str = " → ".join([curr_code.value] + target_steps) if curr_code.value != 'NA' else 'NA'
+    curr = curr_code.value
+    conf = conf_code.value
+    upgrade_path_str = f"{curr} → {conf}" if curr != 'NA' and conf != 'NA' else 'NA'
 
     required_packages = []
     internal_act_lines = []
@@ -409,11 +428,11 @@ def process_tc_generation():
                 ave_pkg = next((p for p in PACKAGE_DATABASE if p["type"] == "AVE /space"), None)
                 if ave_pkg: required_packages.append(ave_pkg)
 
-            if 'DDOS Upgrade' in add_acts_list:
+            if 'DDOS Upgrade' in add_acts_list or act_to == 'DDOS Upgrade':
                 ddos_pkg = next((p for p in PACKAGE_DATABASE if p["type"] == "DDOS"), None)
                 if ddos_pkg: required_packages.append(ddos_pkg)
 
-            if 'Hotfix Upgrade' in add_acts_list:
+            if 'Hotfix Upgrade' in add_acts_list or act_to == 'Hotfix Upgrade':
                 hf_pkg = next((p for p in PACKAGE_DATABASE if p["type"] == "Hotfix" and p["applicableFor"] == act_to), None)
                 if hf_pkg: required_packages.append(hf_pkg)
 
