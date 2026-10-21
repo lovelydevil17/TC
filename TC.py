@@ -301,7 +301,9 @@ with ui.row().classes('w-full p-6 gap-6'):
                                 curr = curr_code.value if curr_code.value != 'NA' else selected_from
                                 allowed = UPGRADE_PATHS.get(curr, ['2.7.2', '2.7.7', '2.7.9', 'DDOS Upgrade', 'Hotfix Upgrade'])
                                 filtered = [opt for opt in allowed if opt != selected_from]
-                                return ['NA'] + filtered + ['DDOS Upgrade', 'Hotfix Upgrade', 'Other']
+                                combined = ['NA'] + filtered + ['Other']
+                                # Remove duplicates while preserving insertion order
+                                return list(dict.fromkeys(combined))
 
                             with ui.column().classes('w-full gap-1'):
                                 inp_to = ui.select(get_filtered_to_options(from_v), label='Upgrading To', value=to_v).classes('w-full text-xs')
