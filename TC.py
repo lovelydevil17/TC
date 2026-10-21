@@ -252,7 +252,7 @@ with ui.row().classes('w-full p-6 gap-6'):
             
             with ui.row().classes('w-full gap-2 mt-2'):
                 ui.button('📋 Copy Email Text', on_click=lambda: copy_to_clipboard(email_body_output.value)).classes('bg-sky-700 text-white')
-                ui.button('💾 Download Email (.txt)', on_click=lambda: download_file(email_body_output.value, f"{sr_num.value or 'TC'}_Customer_Email.txt")).classes('bg-sky-900 text-white')
+                ui.button('💾 Download Outlook Email (.eml)', on_click=lambda: download_eml_file(email_subject_output.value, email_body_output.value, f"{sr_num.value or 'TC'}_Customer_Email.eml")).classes('bg-sky-900 text-white')
 
 
 # Add 1 initial activity step card by default
@@ -265,7 +265,6 @@ def calculate_activity_duration(model_str, base_name, ndmp_cnt, add_acts, manual
         raw_duration_hrs = float(manual_duration)
     else:
         raw_duration_hrs = 0.0
-        # 1. Base Model OE Duration
         if base_name in ['IDPA OE Code Upgrade', 'NA']:
             raw_duration_hrs += MODEL_BASE_DURATIONS.get(model_str, 9.0)
         elif base_name == 'DDOS Upgrade':
@@ -273,14 +272,12 @@ def calculate_activity_duration(model_str, base_name, ndmp_cnt, add_acts, manual
         elif base_name == 'Hotfix Upgrade':
             raw_duration_hrs += 1.0
 
-        # 2. NDMP Duration (0.5h per count)
         ndmp_multiplier_map = {'Yes—1': 1, 'Yes—2': 2, 'Yes—3': 3, 'Yes—4': 4}
         if ndmp_cnt in ndmp_multiplier_map:
             raw_duration_hrs += ndmp_multiplier_map[ndmp_cnt] * 0.5
         elif ndmp_cnt == 'Yes—Other':
             raw_duration_hrs += 0.5
 
-        # 3. Additional Component Durations
         if 'DDOS Upgrade' in add_acts and base_name != 'DDOS Upgrade':
             raw_duration_hrs += 3.0
         if 'Hotfix Upgrade' in add_acts and base_name != 'Hotfix Upgrade':
@@ -288,10 +285,7 @@ def calculate_activity_duration(model_str, base_name, ndmp_cnt, add_acts, manual
         if 'AVE /space expansion' in add_acts:
             raw_duration_hrs += 1.0
 
-    # Rule: Customer-facing duration in email reflects raw duration + 1-hour buffer
     cust_buffered_duration = raw_duration_hrs + 1.0
-    
-    # Internal planned duration (for internal log template)
     internal_planned_duration = raw_duration_hrs + 1.0
 
     return raw_duration_hrs, cust_buffered_duration, internal_planned_duration
@@ -379,7 +373,6 @@ def process_tc_generation():
 
         act_name = compute_combined_activity_name(base_name, ndmp_cnt, add_acts_list)
         
-        # Calculate duration
         raw_hrs, cust_buffered_hrs, internal_planned_hrs = calculate_activity_duration(
             sys_model.value, base_name, ndmp_cnt, add_acts_list, manual_duration
         )
@@ -388,7 +381,6 @@ def process_tc_generation():
             f"{act_rcm} | {act_name} | {act_from} → {act_to} | {act_date} | Base Duration: {raw_hrs}h | Planned Duration: {internal_planned_hrs}h (Internal Buffer +1h) | Status: {sched_status} | Multi-Step: {multi_step_flag}"
         )
 
-        # Customer Email Section: Displays buffered duration (+1 hour) without exposing actual raw calculation
         customer_act_sections.append(
             f"Step {idx}: {act_name}\n"
             f"  • RCM Activity ID   : {act_rcm}\n"
@@ -586,6 +578,23 @@ def download_file(content, filename):
         return
     ui.download(content.encode('utf-8'), filename)
     ui.notify(f'Downloading {filename}...', type='positive')
+
+def download_eml_file(subject, body, filename):
+    if not body:
+        ui.notify('Please generate deliverables first!', type='warning')
+        return
+    
+    # Construct RFC 5322 .eml format payload compatible with Outlook
+    eml_content = (
+        f"Subject: {subject}\n"
+        f"From: support@dell.com\n"
+        f"To: \n"
+        f"MIME-Version: 1.0\n"
+        f"Content-Type: text/plain; charset=utf-8\n\n"
+        f"{body}"
+    )
+    ui.download(eml_content.encode('utf-8'), filename)
+    ui.notify(f'Downloading Outlook Email file ({filename})... Open it in Outlook to add recipient and send!', type='positive')
 
 # --- ENVIRONMENT PORT BINDING FOR RENDER / LOCAL ---
 port = int(os.environ.get("PORT", 8080))
