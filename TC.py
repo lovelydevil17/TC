@@ -302,7 +302,6 @@ with ui.row().classes('w-full p-6 gap-6'):
                                 allowed = UPGRADE_PATHS.get(curr, ['2.7.2', '2.7.7', '2.7.9', 'DDOS Upgrade', 'Hotfix Upgrade'])
                                 filtered = [opt for opt in allowed if opt != selected_from]
                                 combined = ['NA'] + filtered + ['Other']
-                                # Remove duplicates while preserving insertion order
                                 return list(dict.fromkeys(combined))
 
                             with ui.column().classes('w-full gap-1'):
@@ -729,16 +728,18 @@ def download_eml_file(subject, body, filename):
         ui.notify('Please generate deliverables first!', type='warning')
         return
     
+    # Added X-Unsent: 1 and blank To: field so Outlook opens it as an editable draft
     eml_content = (
         f"Subject: {subject}\n"
         f"From: support@dell.com\n"
         f"To: \n"
+        f"X-Unsent: 1\n"
         f"MIME-Version: 1.0\n"
         f"Content-Type: text/plain; charset=utf-8\n\n"
         f"{body}"
     )
     ui.download(eml_content.encode('utf-8'), filename)
-    ui.notify(f'Downloading Outlook Email file ({filename})... Open it in Outlook to add recipient and send!', type='positive')
+    ui.notify(f'Downloading Outlook Draft Email ({filename})... Open it in Outlook to add recipient and send!', type='positive')
 
 # --- ENVIRONMENT PORT BINDING FOR RENDER / LOCAL ---
 port = int(os.environ.get("PORT", 8080))
