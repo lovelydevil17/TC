@@ -50,9 +50,12 @@ activity_rows = []
 
 # --- CORE AUTO DURATION CALCULATION HELPER ---
 def compute_raw_duration(model_str, base_name, ndmp_cnt, add_acts):
+    if model_str == 'NA':
+        return 0.0
+        
     raw_duration_hrs = 0.0
     if base_name in ['IDPA OE Code Upgrade', 'NA']:
-        raw_duration_hrs += MODEL_BASE_DURATIONS.get(model_str, 9.0)
+        raw_duration_hrs += MODEL_BASE_DURATIONS.get(model_str, 0.0)
     elif base_name == 'DDOS Upgrade':
         raw_duration_hrs += 3.0
     elif base_name == 'Hotfix Upgrade':
@@ -108,7 +111,7 @@ with ui.row().classes('w-full p-6 gap-6'):
                 serial_num = ui.input('Serial Number *', value='').classes('w-full')
                 
                 with ui.column().classes('w-full gap-1'):
-                    sys_model = ui.select(['NA', 'Model 4x', 'Model 5x', 'Model 8x', 'Other'], label='IDPA Model *', value='Model 5x').classes('w-full')
+                    sys_model = ui.select(['NA', 'Model 4x', 'Model 5x', 'Model 8x', 'Other'], label='IDPA Model *', value='NA').classes('w-full')
                     sys_model_other = ui.input('Specify IDPA Model Details', value='').classes('w-full text-xs')
                     sys_model_other.bind_visibility_from(sys_model, 'value', backward=lambda v: str(v) == 'Other')
 
@@ -286,18 +289,16 @@ with ui.row().classes('w-full p-6 gap-6'):
                                 inp_to_other = ui.input('Specify Upgrading To', value='').classes('w-full text-xs')
                                 inp_to_other.bind_visibility_from(inp_to, 'value', backward=lambda v: str(v) == 'Other')
 
-                            duration_options = [round(x * 0.5, 1) for x in range(1, 25)]
+                            duration_options = [0.0] + [round(x * 0.5, 1) for x in range(1, 25)]
                             
-                            # Initial calculation for auto duration
-                            init_model = sys_model.value if sys_model.value != 'Other' else 'Model 5x'
+                            init_model = sys_model.value if sys_model.value != 'Other' and sys_model.value != 'NA' else 'NA'
                             init_auto_hrs = compute_raw_duration(init_model, name, ndmp_count, add_acts)
-                            initial_duration = duration_val if duration_val is not None else (init_auto_hrs if init_auto_hrs in duration_options else 9.0)
+                            initial_duration = duration_val if duration_val is not None else init_auto_hrs
 
                             inp_duration = ui.select(duration_options, label='Duration (Hours - Auto/Override)', value=initial_duration).classes('w-full text-xs')
 
-                            # Function to auto-recalculate duration and update dropdown
                             def update_auto_duration():
-                                m_val = sys_model.value if sys_model.value != 'Other' else 'Model 5x'
+                                m_val = sys_model.value if sys_model.value != 'Other' and sys_model.value != 'NA' else 'NA'
                                 b_val = inp_name.value
                                 n_val = inp_ndmp_count.value
                                 a_val = inp_add_acts.value if isinstance(inp_add_acts.value, list) else []
@@ -306,7 +307,6 @@ with ui.row().classes('w-full p-6 gap-6'):
                                 if auto_calc in duration_options:
                                     inp_duration.value = auto_calc
 
-                            # Hook up reactivity to trigger duration recalculation
                             inp_name.on('update:value', lambda _: update_auto_duration())
                             sys_model.on('update:value', lambda _: update_auto_duration())
 
@@ -416,13 +416,13 @@ add_activity_card()
 
 # --- DURATION CALCULATION LOGIC ---
 def calculate_activity_duration(model_str, base_name, ndmp_cnt, add_acts, manual_duration):
-    if manual_duration is not None:
+    if manual_duration is not None and float(manual_duration) > 0.0:
         raw_duration_hrs = float(manual_duration)
     else:
         raw_duration_hrs = compute_raw_duration(model_str, base_name, ndmp_cnt, add_acts)
 
-    cust_buffered_duration = raw_duration_hrs + 1.0
-    internal_planned_duration = raw_duration_hrs + 1.0
+    cust_buffered_duration = raw_duration_hrs + 1.0 if raw_duration_hrs > 0 else 0.0
+    internal_planned_duration = raw_duration_hrs + 1.0 if raw_duration_hrs > 0 else 0.0
 
     return raw_duration_hrs, cust_buffered_duration, internal_planned_duration
 
