@@ -12,9 +12,9 @@ MODEL_BASE_DURATIONS = {
 }
 
 UPGRADE_PATHS = {
-    "2.6.0": ["2.7.2", "2.7.7", "2.7.9"],
-    "2.7.2": ["2.7.7", "2.7.9"],
-    "2.7.7": ["2.7.9"],
+    "2.6.0": ["2.7.2", "2.7.7", "2.7.9", "DDOS Upgrade", "Hotfix Upgrade"],
+    "2.7.2": ["2.7.7", "2.7.9", "DDOS Upgrade", "Hotfix Upgrade"],
+    "2.7.7": ["2.7.9", "DDOS Upgrade", "Hotfix Upgrade"],
     "2.7.9": ["DDOS Upgrade", "Hotfix Upgrade"]
 }
 
@@ -250,7 +250,7 @@ with ui.row().classes('w-full p-6 gap-6'):
             
             activity_container = ui.column().classes('w-full gap-3')
 
-            def add_activity_card(rcm='TBD', name='IDPA OE Code Upgrade', from_v='NA', to_v='NA', date_val='', time_val='10:00', schedule_status='To be Scheduled', ndmp_count='No', ndmp_details='', add_acts=['No Additional Activities'], add_act_details='', duration_val=None, multi_step=False):
+            def add_activity_card(rcm='TBD', name='NA', from_v='NA', to_v='NA', date_val='', time_val='10:00', schedule_status='To be Scheduled', ndmp_count='No', ndmp_details='', add_acts=['No Additional Activities'], add_act_details='', duration_val=None, multi_step=False):
                 with activity_container:
                     card = ui.card().classes('w-full p-3 bg-gray-50 border border-gray-200')
                     with card:
@@ -301,7 +301,7 @@ with ui.row().classes('w-full p-6 gap-6'):
                                 curr = curr_code.value if curr_code.value != 'NA' else selected_from
                                 allowed = UPGRADE_PATHS.get(curr, ['2.7.2', '2.7.7', '2.7.9', 'DDOS Upgrade', 'Hotfix Upgrade'])
                                 filtered = [opt for opt in allowed if opt != selected_from]
-                                return ['NA'] + filtered + ['Other']
+                                return ['NA'] + filtered + ['DDOS Upgrade', 'Hotfix Upgrade', 'Other']
 
                             with ui.column().classes('w-full gap-1'):
                                 inp_to = ui.select(get_filtered_to_options(from_v), label='Upgrading To', value=to_v).classes('w-full text-xs')
